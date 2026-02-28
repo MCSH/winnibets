@@ -121,11 +121,7 @@ export default function Shell() {
 
       {/* Footer */}
       <footer className="border-t border-ink-border/30 py-6 text-center text-xs text-ink-muted">
-        <span className="font-display tracking-wider text-sm text-ink-muted/60">
-          WINNIBETS
-        </span>
-        <span className="mx-2">&middot;</span>
-        Community Blockchain Ledger
+        Powered by linear algebra, made by MCSH
       </footer>
     </div>
   );
