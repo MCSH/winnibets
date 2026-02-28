@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { requestMagicLink } from "../lib/api";
 import { motion } from "motion/react";
 
@@ -50,9 +51,11 @@ export default function Login() {
       >
         {/* Brand */}
         <div className="text-center mb-10">
-          <h1 className="font-display text-6xl tracking-wider text-gold leading-none">
-            WINNIBETS
-          </h1>
+          <Link to="/" className="no-underline">
+            <h1 className="font-display text-6xl tracking-wider text-gold leading-none">
+              WINNIBETS
+            </h1>
+          </Link>
           <p className="text-chalk-dim text-sm mt-2">
             Community Blockchain Ledger
           </p>
