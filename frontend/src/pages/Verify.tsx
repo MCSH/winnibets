@@ -20,7 +20,11 @@ export default function Verify() {
     verifyToken(token)
       .then((res) => {
         login(res.session_token);
-        navigate("/", { replace: true });
+        if (res.pending_bet_id) {
+          navigate("/pending", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       })
       .catch((err) => {
         setError((err as Error).message);

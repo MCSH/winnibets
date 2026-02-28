@@ -1,16 +1,75 @@
 """FastAPI application entry point."""
 
+import json
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.blockchain import Blockchain
-from app.database import create_tables
+from app.blockchain import Block, Blockchain
+from app.database import SessionLocal, create_tables
+from app.models import ChainBlock
+
+logger = logging.getLogger(__name__)
 
 
-# Singleton blockchain instance
-blockchain = Blockchain()
+def _persist_block(block: Block) -> None:
+    """Save a new block to the ChainBlock table."""
+    db = SessionLocal()
+    try:
+        row = ChainBlock(
+            index=block.index,
+            timestamp=block.timestamp,
+            data=json.dumps(block.data, sort_keys=True),
+            previous_hash=block.previous_hash,
+            hash=block.hash,
+        )
+        db.add(row)
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Failed to persist block %d", block.index)
+    finally:
+        db.close()
+
+
+def _load_chain() -> Blockchain:
+    """Create a Blockchain, loading any persisted blocks from the DB."""
+    chain = Blockchain(on_new_block=_persist_block)
+
+    db = SessionLocal()
+    try:
+        rows = db.query(ChainBlock).order_by(ChainBlock.index).all()
+        if rows:
+            blocks = []
+            for row in rows:
+                b = Block(
+                    index=row.index,
+                    timestamp=row.timestamp,
+                    data=json.loads(row.data),
+                    previous_hash=row.previous_hash,
+                )
+                # Verify the hash matches what was stored
+                if b.hash != row.hash:
+                    logger.error(
+                        "Hash mismatch for block %d: computed=%s stored=%s",
+                        row.index, b.hash, row.hash,
+                    )
+                blocks.append(b)
+            chain.load_persisted_blocks(blocks)
+        else:
+            # First run — persist the genesis block
+            genesis = chain.chain[0]
+            _persist_block(genesis)
+    finally:
+        db.close()
+
+    return chain
+
+
+# Singleton blockchain instance (loaded after tables are created)
+blockchain: Blockchain = Blockchain()
 
 
 def _reset_blockchain() -> None:
@@ -21,7 +80,10 @@ def _reset_blockchain() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global blockchain
     create_tables()
+    blockchain = _load_chain()
+    logger.info("Blockchain loaded with %d blocks", len(blockchain.chain))
     yield
 
 

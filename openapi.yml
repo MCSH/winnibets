@@ -28,7 +28,7 @@ components:
   schemas:
     IdentifierType:
       type: string
-      enum: [phone]
+      enum: [phone, email]
 
     Visibility:
       type: string

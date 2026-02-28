@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_phone_number: str = ""
+    # SendGrid Email
+    sendgrid_api_key: str = ""
+    sendgrid_from_email: str = ""
 
     model_config = {"env_prefix": "WINNIBETS_"}
 

@@ -8,9 +8,13 @@ interface BetResult {
   message: string;
 }
 
+type CounterpartyMode = "phone" | "email";
+
 export default function Bet() {
   const [terms, setTerms] = useState("");
   const [counterparty, setCounterparty] = useState("");
+  const [counterpartyMode, setCounterpartyMode] =
+    useState<CounterpartyMode>("phone");
   const [visibility, setVisibility] = useState<"visible" | "hidden">("visible");
   const [expiryHours, setExpiryHours] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,9 +28,17 @@ export default function Bet() {
     if (!terms.trim() || !counterparty.trim()) return;
 
     const cleaned = counterparty.trim();
-    if (!cleaned.startsWith("+") || cleaned.length < 8) {
-      setError("Counterparty phone must be E.164 format, e.g. +14155551234");
-      return;
+
+    if (counterpartyMode === "phone") {
+      if (!cleaned.startsWith("+") || cleaned.length < 8) {
+        setError("Counterparty phone must be E.164 format, e.g. +14155551234");
+        return;
+      }
+    } else {
+      if (!cleaned.includes("@") || cleaned.length < 5) {
+        setError("Enter a valid email address for the counterparty");
+        return;
+      }
     }
 
     setLoading(true);
@@ -34,7 +46,7 @@ export default function Bet() {
       const res = await createBet({
         bet_terms: terms,
         counterparty_identifier: cleaned,
-        counterparty_identifier_type: "phone",
+        counterparty_identifier_type: counterpartyMode,
         visibility,
         ...(expiryHours ? { expiry_hours: Number(expiryHours) } : {}),
       });
@@ -57,8 +69,8 @@ export default function Bet() {
           PLACE A BET
         </h1>
         <p className="text-chalk-dim text-sm mt-1">
-          Create a two-party wager. Your counterparty will receive an SMS
-          invitation to accept or decline.
+          Create a two-party wager. Your counterparty will receive an invitation
+          to accept or decline.
         </p>
       </div>
 
@@ -82,13 +94,37 @@ export default function Bet() {
           {/* Counterparty */}
           <div>
             <label className="block text-xs font-medium text-chalk-dim mb-2 uppercase tracking-wider">
-              Counterparty Phone
+              Counterparty
             </label>
+            <div className="flex gap-2 mb-2">
+              {(["phone", "email"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setCounterpartyMode(m);
+                    setCounterparty("");
+                    setError("");
+                  }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer border uppercase tracking-wider ${
+                    counterpartyMode === m
+                      ? "bg-gold/15 border-gold/50 text-gold"
+                      : "bg-ink border-ink-border text-chalk-dim hover:border-ink-muted"
+                  }`}
+                >
+                  {m === "phone" ? "Phone" : "Email"}
+                </button>
+              ))}
+            </div>
             <input
-              type="tel"
+              type={counterpartyMode === "phone" ? "tel" : "email"}
               value={counterparty}
               onChange={(e) => setCounterparty(e.target.value)}
-              placeholder="+14155551234"
+              placeholder={
+                counterpartyMode === "phone"
+                  ? "+14155551234"
+                  : "them@example.com"
+              }
               className="w-full bg-ink border border-ink-border rounded px-4 py-3 text-chalk font-mono text-sm placeholder:text-ink-muted focus:outline-none focus:border-gold/60 transition-colors"
             />
           </div>

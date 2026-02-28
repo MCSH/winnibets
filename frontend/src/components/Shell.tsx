@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 const AUTH_NAV = [
   { to: "/message", label: "Message" },
   { to: "/bet", label: "Place Bet" },
+  { to: "/pending", label: "Pending" },
   { to: "/explorer", label: "Explorer" },
 ] as const;
 

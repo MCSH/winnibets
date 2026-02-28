@@ -117,7 +117,10 @@ def verify_magic_link(
     db.add(session_token)
     db.commit()
 
-    return VerifyResponse(session_token=session_token_str)
+    return VerifyResponse(
+        session_token=session_token_str,
+        pending_bet_id=magic_link.pending_bet_id,
+    )
 
 
 @router.get("/me", response_model=UserResponse)

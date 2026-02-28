@@ -61,13 +61,13 @@ def client(db_engine):
 
     app.dependency_overrides[get_db] = override_get_db
 
-    # Reset the blockchain and rate limiter for each test so tests are isolated
     from app.main import _reset_blockchain
     from app.rate_limit import _reset as _reset_rate_limit
-    _reset_blockchain()
-    _reset_rate_limit()
 
     with TestClient(app) as c:
+        # Reset AFTER lifespan starts so _load_chain() doesn't leak blocks
+        _reset_blockchain()
+        _reset_rate_limit()
         yield c
 
     app.dependency_overrides.clear()

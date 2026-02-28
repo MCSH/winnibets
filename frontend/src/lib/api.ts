@@ -33,15 +33,18 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 // --- Auth ---
 
-export function requestMagicLink(identifier: string) {
+export function requestMagicLink(
+  identifier: string,
+  identifier_type: "phone" | "email" = "phone",
+) {
   return request<{ message: string }>("/auth/magic-link", {
     method: "POST",
-    body: JSON.stringify({ identifier, identifier_type: "phone" }),
+    body: JSON.stringify({ identifier, identifier_type }),
   });
 }
 
 export function verifyToken(token: string) {
-  return request<{ session_token: string }>(
+  return request<{ session_token: string; pending_bet_id?: number }>(
     `/auth/verify?token=${encodeURIComponent(token)}`,
   );
 }
@@ -85,7 +88,7 @@ export function submitMessage(
 export function createBet(params: {
   bet_terms: string;
   counterparty_identifier: string;
-  counterparty_identifier_type: "phone";
+  counterparty_identifier_type: "phone" | "email";
   visibility: "visible" | "hidden";
   expiry_hours?: number;
 }) {
@@ -93,6 +96,20 @@ export function createBet(params: {
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+export interface PendingBet {
+  bet_id: number;
+  bet_terms: string;
+  visibility: string;
+  initiator_identifier: string;
+  initiator_identifier_type: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export function listPendingBets() {
+  return request<PendingBet[]>("/bets/pending");
 }
 
 export function respondToBet(betId: number, accept: boolean) {

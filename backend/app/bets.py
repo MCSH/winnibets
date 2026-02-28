@@ -18,6 +18,7 @@ from app.schemas import (
     BetAcceptResponse,
     BetCreateRequest,
     BetCreateResponse,
+    PendingBetSummary,
 )
 
 router = APIRouter(prefix="/bets", tags=["bets"])
@@ -126,6 +127,40 @@ def create_bet(
     )
 
     return BetCreateResponse(bet_id=pending_bet.id, message="Bet created and invitation sent")
+
+
+@router.get("/pending", response_model=list[PendingBetSummary])
+def list_pending_bets(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List pending bets where the current user is the counterparty."""
+    now = datetime.now(timezone.utc)
+    bets = (
+        db.query(PendingBet)
+        .filter(
+            PendingBet.counterparty_user_id == current_user.id,
+            PendingBet.status == "pending",
+            PendingBet.expires_at > now,
+        )
+        .order_by(PendingBet.created_at.desc())
+        .all()
+    )
+    results = []
+    for bet in bets:
+        initiator = db.query(User).filter(User.id == bet.initiator_id).first()
+        results.append(
+            PendingBetSummary(
+                bet_id=bet.id,
+                bet_terms=bet.bet_terms,
+                visibility=bet.visibility,
+                initiator_identifier=initiator.identifier if initiator else "unknown",
+                initiator_identifier_type=initiator.identifier_type if initiator else "unknown",
+                expires_at=bet.expires_at.isoformat(),
+                created_at=bet.created_at.isoformat(),
+            )
+        )
+    return results
 
 
 @router.post("/{bet_id}/respond", response_model=BetAcceptResponse)

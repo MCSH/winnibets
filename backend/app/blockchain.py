@@ -2,13 +2,17 @@
 
 This is a private/permissioned chain. Blocks are appended with
 proof-of-authority (single-node authority in this implementation).
+Blocks are persisted to the ChainBlock SQLAlchemy table for durability.
 """
 
 import hashlib
 import json
+import logging
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
+
+logger = logging.getLogger(__name__)
 
 
 class Block:
@@ -41,13 +45,18 @@ class Block:
         return hashlib.sha256(block_content.encode("utf-8")).hexdigest()
 
 
-class Blockchain:
-    """In-memory blockchain with append, lookup, and integrity verification."""
+# Type alias for the persistence callback
+PersistCallback = Callable[[Block], None]
 
-    def __init__(self) -> None:
+
+class Blockchain:
+    """Blockchain with append, lookup, integrity verification, and optional persistence."""
+
+    def __init__(self, on_new_block: PersistCallback | None = None) -> None:
         self._lock = threading.Lock()
         self.chain: list[Block] = []
         self._hash_index: dict[str, int] = {}
+        self._on_new_block = on_new_block
         self._create_genesis_block()
 
     def _create_genesis_block(self) -> None:
@@ -59,6 +68,17 @@ class Blockchain:
         )
         self.chain.append(genesis)
         self._hash_index[genesis.hash] = 0
+
+    def load_persisted_blocks(self, blocks: list[Block]) -> None:
+        """Replace the in-memory chain with previously persisted blocks.
+
+        Called once at startup before any new blocks are added.
+        The provided blocks must include the genesis block and be in order.
+        """
+        with self._lock:
+            self.chain = blocks
+            self._hash_index = {b.hash: b.index for b in blocks}
+            logger.info("Loaded %d persisted blocks", len(blocks))
 
     def add_block(self, data: dict[str, Any]) -> Block:
         """Create and append a new block with the given data. Returns the new block.
@@ -75,7 +95,15 @@ class Blockchain:
             )
             self.chain.append(new_block)
             self._hash_index[new_block.hash] = new_block.index
-            return new_block
+
+        # Persist outside the lock to avoid holding it during DB I/O
+        if self._on_new_block:
+            try:
+                self._on_new_block(new_block)
+            except Exception:
+                logger.exception("Failed to persist block %d", new_block.index)
+
+        return new_block
 
     def get_block_by_hash(self, block_hash: str) -> Block | None:
         """Look up a block by its hash. Returns None if not found."""

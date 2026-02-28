@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Message from "./pages/Message";
 import Bet from "./pages/Bet";
 import BetRespond from "./pages/BetRespond";
+import PendingBets from "./pages/PendingBets";
 import Explorer from "./pages/Explorer";
 import type { ReactNode } from "react";
 
@@ -68,6 +69,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <Bet />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pending"
+          element={
+            <RequireAuth>
+              <PendingBets />
             </RequireAuth>
           }
         />

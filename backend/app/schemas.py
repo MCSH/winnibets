@@ -8,6 +8,7 @@ from pydantic import BaseModel, field_validator
 
 class IdentifierType(str, Enum):
     phone = "phone"
+    email = "email"
 
 
 class Visibility(str, Enum):
@@ -36,6 +37,7 @@ class MagicLinkResponse(BaseModel):
 
 class VerifyResponse(BaseModel):
     session_token: str
+    pending_bet_id: Optional[int] = None
 
 
 class UserResponse(BaseModel):
@@ -103,6 +105,16 @@ class BetAcceptResponse(BaseModel):
     block_hash: Optional[str] = None
     block_index: Optional[int] = None
     timestamp: Optional[float] = None
+
+
+class PendingBetSummary(BaseModel):
+    bet_id: int
+    bet_terms: str
+    visibility: str
+    initiator_identifier: str
+    initiator_identifier_type: str
+    expires_at: str
+    created_at: str
 
 
 # --- Unified message schemas ---

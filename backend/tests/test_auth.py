@@ -7,7 +7,7 @@ from app.models import MagicLink, User
 
 
 class TestRequestMagicLink:
-    """FR1: Users submit a phone number, system sends a magic link."""
+    """FR1: Users submit a phone number or email, system sends a magic link."""
 
     def test_request_magic_link_with_phone(self, client):
         resp = client.post(
@@ -19,6 +19,15 @@ class TestRequestMagicLink:
         assert body["message"] == "Magic link sent"
         assert "token" not in body
 
+    def test_request_magic_link_with_email(self, client):
+        resp = client.post(
+            "/auth/magic-link",
+            json={"identifier": "alice@example.com", "identifier_type": "email"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["message"] == "Magic link sent"
+
     def test_request_magic_link_creates_user_if_new(self, client, db_session):
         resp = client.post(
             "/auth/magic-link",
@@ -26,10 +35,17 @@ class TestRequestMagicLink:
         )
         assert resp.status_code == 200
 
+    def test_request_magic_link_creates_email_user_if_new(self, client):
+        resp = client.post(
+            "/auth/magic-link",
+            json={"identifier": "newuser@example.com", "identifier_type": "email"},
+        )
+        assert resp.status_code == 200
+
     def test_request_magic_link_invalid_type(self, client):
         resp = client.post(
             "/auth/magic-link",
-            json={"identifier": "+14155551234", "identifier_type": "email"},
+            json={"identifier": "+14155551234", "identifier_type": "carrier_pigeon"},
         )
         assert resp.status_code == 422
 
@@ -59,6 +75,21 @@ class TestVerifyMagicLink:
         body = resp.json()
         assert "session_token" in body
         assert len(body["session_token"]) > 0
+
+    def test_verify_valid_token_email(self, client):
+        resp = client.post(
+            "/auth/magic-link",
+            json={"identifier": "verify@example.com", "identifier_type": "email"},
+        )
+        assert resp.status_code == 200
+
+        resp = client.get("/auth/_test/latest-token?identifier=verify%40example.com")
+        token = resp.json()["token"]
+
+        resp = client.get(f"/auth/verify?token={token}")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "session_token" in body
 
     def test_verify_expired_token_returns_401(self, client):
         resp = client.post(
@@ -124,6 +155,24 @@ class TestSessionAuth:
         )
         assert resp.status_code == 200
         assert resp.json()["identifier"] == "+15550010005"
+
+    def test_authenticated_request_with_email_session(self, client):
+        client.post(
+            "/auth/magic-link",
+            json={"identifier": "me@example.com", "identifier_type": "email"},
+        )
+        resp = client.get("/auth/_test/latest-token?identifier=me%40example.com")
+        token = resp.json()["token"]
+        resp = client.get(f"/auth/verify?token={token}")
+        session_token = resp.json()["session_token"]
+
+        resp = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {session_token}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["identifier"] == "me@example.com"
+        assert resp.json()["identifier_type"] == "email"
 
     def test_unauthenticated_request_returns_401(self, client):
         resp = client.get("/auth/me")
