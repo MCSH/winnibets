@@ -4,7 +4,7 @@ import Shell from "./components/Shell";
 import Login from "./pages/Login";
 import Verify from "./pages/Verify";
 import Home from "./pages/Home";
-import HiddenMessage from "./pages/HiddenMessage";
+import Message from "./pages/Message";
 import Bet from "./pages/Bet";
 import BetRespond from "./pages/BetRespond";
 import Explorer from "./pages/Explorer";
@@ -45,19 +45,40 @@ function AppRoutes() {
       />
       <Route path="/auth/verify" element={<Verify />} />
 
-      {/* Protected */}
-      <Route
-        element={
-          <RequireAuth>
-            <Shell />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<Home />} />
-        <Route path="/message" element={<HiddenMessage />} />
-        <Route path="/bet" element={<Bet />} />
-        <Route path="/bets/:betId/respond" element={<BetRespond />} />
+      {/* Shell layout (handles both auth and public states) */}
+      <Route element={<Shell />}>
+        {/* Public */}
         <Route path="/explorer" element={<Explorer />} />
+
+        {/* Protected */}
+        <Route
+          index
+          element={user ? <Home /> : <Navigate to="/explorer" replace />}
+        />
+        <Route
+          path="/message"
+          element={
+            <RequireAuth>
+              <Message />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/bet"
+          element={
+            <RequireAuth>
+              <Bet />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/bets/:betId/respond"
+          element={
+            <RequireAuth>
+              <BetRespond />
+            </RequireAuth>
+          }
+        />
       </Route>
 
       {/* Fallback */}

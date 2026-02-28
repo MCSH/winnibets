@@ -105,6 +105,29 @@ class BetAcceptResponse(BaseModel):
     timestamp: Optional[float] = None
 
 
+# --- Unified message schemas ---
+
+
+class MessageRequest(BaseModel):
+    plaintext: str
+    visibility: Visibility
+
+    @field_validator("plaintext")
+    @classmethod
+    def plaintext_not_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Message must not be empty or whitespace-only")
+        return v
+
+
+class MessageResponse(BaseModel):
+    message_hash: str
+    block_hash: str
+    block_index: int
+    timestamp: float
+    visibility: str
+
+
 # --- Block lookup schemas ---
 
 
@@ -113,6 +136,21 @@ class BlockLookupResponse(BaseModel):
     timestamp: float
     record_type: str
     data: dict
+
+
+class BlockSummary(BaseModel):
+    block_index: int
+    block_hash: str
+    timestamp: float
+    record_type: str
+    data: dict
+
+
+class BlockListResponse(BaseModel):
+    blocks: list[BlockSummary]
+    total: int
+    offset: int
+    limit: int
 
 
 # --- Integrity check schemas ---

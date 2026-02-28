@@ -12,7 +12,7 @@ tags:
   - name: auth
     description: Magic link authentication and session management
   - name: messages
-    description: Hidden message submission
+    description: Message submission (open and hidden)
   - name: bets
     description: Bet creation, response, and expiry
   - name: blocks
@@ -206,6 +206,68 @@ components:
           additionalProperties: true
       required: [block_index, timestamp, record_type, data]
 
+    MessageRequest:
+      type: object
+      properties:
+        plaintext:
+          type: string
+          minLength: 1
+          description: Message content
+        visibility:
+          $ref: "#/components/schemas/Visibility"
+      required: [plaintext, visibility]
+
+    MessageResponse:
+      type: object
+      properties:
+        message_hash:
+          type: string
+          description: SHA-256 hex digest of the plaintext
+        block_hash:
+          type: string
+          description: SHA-256 hex digest of the block
+        block_index:
+          type: integer
+        timestamp:
+          type: number
+          format: double
+        visibility:
+          type: string
+          enum: [visible, hidden]
+      required: [message_hash, block_hash, block_index, timestamp, visibility]
+
+    BlockSummary:
+      type: object
+      properties:
+        block_index:
+          type: integer
+        block_hash:
+          type: string
+        timestamp:
+          type: number
+          format: double
+        record_type:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+      required: [block_index, block_hash, timestamp, record_type, data]
+
+    BlockListResponse:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlockSummary"
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+      required: [blocks, total, offset, limit]
+
     IntegrityResponse:
       type: object
       properties:
@@ -382,6 +444,54 @@ paths:
                 detail:
                   code: RATE_LIMIT_EXCEEDED
                   message: Rate limit exceeded
+
+  /messages:
+    post:
+      operationId: submit_message
+      summary: Submit a message (open or hidden)
+      description: |
+        Submit a message with chosen visibility. Open messages store plaintext
+        on-chain. Hidden messages hash and discard the plaintext.
+        Rate limited to 20 submissions per hour.
+      tags: [messages]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+      responses:
+        "201":
+          description: Message recorded on chain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until the rate limit resets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /bets:
     post:
@@ -565,6 +675,38 @@ paths:
                 detail:
                   code: SERVICE_SECRET_NOT_CONFIGURED
                   message: Service secret not configured
+
+  /blocks/list:
+    get:
+      operationId: list_blocks
+      summary: Browse the blockchain
+      description: |
+        Public endpoint to browse all blocks with pagination. No authentication required.
+        Default page size is 20, maximum is 100.
+      tags: [blocks]
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: Starting index (0-based)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Maximum number of blocks to return
+      responses:
+        "200":
+          description: Paginated block list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockListResponse"
 
   /blocks/{block_hash}:
     get:

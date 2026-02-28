@@ -84,6 +84,14 @@ class Blockchain:
             return self.chain[idx]
         return None
 
+    def get_blocks(self, offset: int = 0, limit: int = 20) -> tuple[list[Block], int]:
+        """Return a slice of the chain and the total block count."""
+        total = len(self.chain)
+        if offset >= total:
+            return [], total
+        end = min(offset + limit, total)
+        return self.chain[offset:end], total
+
     def verify_integrity(self) -> tuple[bool, dict[str, Any]]:
         """Walk the chain and verify hash linkage for every block.
 

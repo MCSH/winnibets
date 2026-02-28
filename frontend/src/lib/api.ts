@@ -64,6 +64,22 @@ export function submitHiddenMessage(plaintext: string) {
   });
 }
 
+export function submitMessage(
+  plaintext: string,
+  visibility: "visible" | "hidden",
+) {
+  return request<{
+    message_hash: string;
+    block_hash: string;
+    block_index: number;
+    timestamp: number;
+    visibility: string;
+  }>("/messages", {
+    method: "POST",
+    body: JSON.stringify({ plaintext, visibility }),
+  });
+}
+
 // --- Bets ---
 
 export function createBet(params: {
@@ -108,4 +124,21 @@ export function verifyIntegrity() {
     blocks?: number;
     first_invalid_block?: number;
   }>("/blocks/");
+}
+
+export interface BlockSummary {
+  block_index: number;
+  block_hash: string;
+  timestamp: number;
+  record_type: string;
+  data: Record<string, unknown>;
+}
+
+export function listBlocks(offset = 0, limit = 20) {
+  return request<{
+    blocks: BlockSummary[];
+    total: number;
+    offset: number;
+    limit: number;
+  }>(`/blocks/list?offset=${offset}&limit=${limit}`);
 }

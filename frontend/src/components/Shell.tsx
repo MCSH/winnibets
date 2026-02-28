@@ -2,15 +2,18 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 
-const NAV = [
-  { to: "/message", label: "Hidden Message" },
+const AUTH_NAV = [
+  { to: "/message", label: "Message" },
   { to: "/bet", label: "Place Bet" },
   { to: "/explorer", label: "Explorer" },
 ] as const;
 
+const PUBLIC_NAV = [{ to: "/explorer", label: "Explorer" }] as const;
+
 export default function Shell() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const nav = user ? AUTH_NAV : PUBLIC_NAV;
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -24,7 +27,7 @@ export default function Shell() {
           </Link>
 
           <nav className="hidden sm:flex items-center gap-1">
-            {NAV.map((n) => {
+            {nav.map((n) => {
               const active = location.pathname === n.to;
               return (
                 <Link
@@ -52,23 +55,32 @@ export default function Shell() {
           </nav>
 
           <div className="flex items-center gap-3">
-            {user && (
-              <span className="text-xs font-mono text-ink-muted hidden sm:block">
-                {user.identifier}
-              </span>
+            {user ? (
+              <>
+                <span className="text-xs font-mono text-ink-muted hidden sm:block">
+                  {user.identifier}
+                </span>
+                <button
+                  onClick={logout}
+                  className="text-xs text-chalk-dim hover:text-lose transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="text-xs font-medium text-gold hover:text-gold-bright no-underline transition-colors"
+              >
+                Login
+              </Link>
             )}
-            <button
-              onClick={logout}
-              className="text-xs text-chalk-dim hover:text-lose transition-colors cursor-pointer"
-            >
-              Logout
-            </button>
           </div>
         </div>
 
         {/* Mobile nav */}
         <nav className="sm:hidden flex items-center gap-1 px-4 pb-2 overflow-x-auto">
-          {NAV.map((n) => {
+          {nav.map((n) => {
             const active = location.pathname === n.to;
             return (
               <Link
