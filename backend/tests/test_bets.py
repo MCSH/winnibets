@@ -2,17 +2,18 @@
 
 import hashlib
 import time
+from urllib.parse import quote
 
 import pytest
 
 
-def _get_session_token(client, email="betuser@test.com"):
+def _get_session_token(client, phone="+15552000000", identifier_type="phone"):
     """Helper: register and get a session token."""
     client.post(
         "/auth/magic-link",
-        json={"identifier": email, "identifier_type": "email"},
+        json={"identifier": phone, "identifier_type": identifier_type},
     )
-    resp = client.get(f"/auth/_test/latest-token?identifier={email}")
+    resp = client.get(f"/auth/_test/latest-token?identifier={quote(phone, safe='')}")
     token = resp.json()["token"]
     resp = client.get(f"/auth/verify?token={token}")
     return resp.json()["session_token"]
@@ -22,13 +23,13 @@ class TestBetCreation:
     """FR4: A verified user creates a bet and invites a counterparty."""
 
     def test_create_visible_bet(self, client):
-        session = _get_session_token(client, "initiator@test.com")
+        session = _get_session_token(client, "+15552001001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "I bet it rains tomorrow",
-                "counterparty_identifier": "counter@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15552001002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
             },
             headers={"Authorization": f"Bearer {session}"},
@@ -39,28 +40,14 @@ class TestBetCreation:
         assert body["message"] == "Bet created and invitation sent"
 
     def test_create_hidden_bet(self, client):
-        session = _get_session_token(client, "hinit@test.com")
+        session = _get_session_token(client, "+15552002001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "Secret bet terms",
-                "counterparty_identifier": "hcounter@test.com",
-                "counterparty_identifier_type": "email",
-                "visibility": "hidden",
-            },
-            headers={"Authorization": f"Bearer {session}"},
-        )
-        assert resp.status_code == 201
-
-    def test_create_bet_with_phone_counterparty(self, client):
-        session = _get_session_token(client, "phoneinit@test.com")
-        resp = client.post(
-            "/bets",
-            json={
-                "bet_terms": "Phone bet",
-                "counterparty_identifier": "+14155559999",
+                "counterparty_identifier": "+15552002002",
                 "counterparty_identifier_type": "phone",
-                "visibility": "visible",
+                "visibility": "hidden",
             },
             headers={"Authorization": f"Bearer {session}"},
         )
@@ -68,13 +55,13 @@ class TestBetCreation:
 
     def test_create_bet_self_counterparty_rejected(self, client):
         """Edge case: counterparty is the same as initiator."""
-        session = _get_session_token(client, "self@test.com")
+        session = _get_session_token(client, "+15552003001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "Bet with myself",
-                "counterparty_identifier": "self@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15552003001",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
             },
             headers={"Authorization": f"Bearer {session}"},
@@ -83,11 +70,11 @@ class TestBetCreation:
 
     def test_create_duplicate_bet_rejected(self, client):
         """Edge case: duplicate pending bet with same initiator and terms."""
-        session = _get_session_token(client, "dup@test.com")
+        session = _get_session_token(client, "+15552004001")
         payload = {
             "bet_terms": "Exact same terms",
-            "counterparty_identifier": "dupcp@test.com",
-            "counterparty_identifier_type": "email",
+            "counterparty_identifier": "+15552004002",
+            "counterparty_identifier_type": "phone",
             "visibility": "visible",
         }
         r1 = client.post("/bets", json=payload, headers={"Authorization": f"Bearer {session}"})
@@ -100,21 +87,21 @@ class TestBetCreation:
             "/bets",
             json={
                 "bet_terms": "No auth bet",
-                "counterparty_identifier": "noauth@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15552005002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
             },
         )
         assert resp.status_code == 401
 
     def test_create_bet_empty_terms_rejected(self, client):
-        session = _get_session_token(client, "empty@test.com")
+        session = _get_session_token(client, "+15552006001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "",
-                "counterparty_identifier": "someone@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15552006002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
             },
             headers={"Authorization": f"Bearer {session}"},
@@ -123,18 +110,17 @@ class TestBetCreation:
 
     def test_pending_bet_not_on_chain(self, client):
         """FR4: Pending bet is NOT recorded on-chain."""
-        session = _get_session_token(client, "pending@test.com")
+        session = _get_session_token(client, "+15552007001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "Not yet on chain",
-                "counterparty_identifier": "pendcp@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15552007002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
             },
             headers={"Authorization": f"Bearer {session}"},
         )
-        # Check chain integrity -- should only have genesis block (no bet blocks)
         resp = client.get("/blocks/")
         assert resp.json()["blocks"] == 1  # Only genesis
 
@@ -144,21 +130,20 @@ class TestBetAcceptance:
 
     def _create_bet_and_get_acceptance_token(self, client):
         """Helper: create a bet and retrieve the acceptance magic link token."""
-        session = _get_session_token(client, "acceptinit@test.com")
+        session = _get_session_token(client, "+15553001001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "I bet the sun rises tomorrow",
-                "counterparty_identifier": "acceptcp@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15553001002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
             },
             headers={"Authorization": f"Bearer {session}"},
         )
         bet_id = resp.json()["bet_id"]
 
-        # Get the magic link token sent to counterparty
-        resp = client.get("/auth/_test/latest-token?identifier=acceptcp@test.com")
+        resp = client.get("/auth/_test/latest-token?identifier=%2B15553001002")
         cp_token = resp.json()["token"]
 
         return bet_id, cp_token
@@ -166,11 +151,9 @@ class TestBetAcceptance:
     def test_accept_bet_commits_block(self, client):
         bet_id, cp_token = self._create_bet_and_get_acceptance_token(client)
 
-        # Counterparty verifies via magic link
         resp = client.get(f"/auth/verify?token={cp_token}")
         cp_session = resp.json()["session_token"]
 
-        # Accept the bet
         resp = client.post(
             f"/bets/{bet_id}/respond",
             json={"accept": True},
@@ -212,7 +195,6 @@ class TestBetAcceptance:
         )
         block_hash = resp.json()["block_hash"]
 
-        # Look up the block
         resp = client.get(f"/blocks/{block_hash}")
         data = resp.json()["data"]
         assert data["type"] == "bet"
@@ -224,21 +206,20 @@ class TestBetAcceptance:
 
     def test_accept_hidden_bet_creates_correct_block_data(self, client):
         """FR6: Hidden bet block stores hash, not plaintext."""
-        session = _get_session_token(client, "hbetinit@test.com")
+        session = _get_session_token(client, "+15553002001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "Hidden bet secret terms",
-                "counterparty_identifier": "hbetcp@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15553002002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "hidden",
             },
             headers={"Authorization": f"Bearer {session}"},
         )
         bet_id = resp.json()["bet_id"]
 
-        # Get counterparty token and accept
-        resp = client.get("/auth/_test/latest-token?identifier=hbetcp@test.com")
+        resp = client.get("/auth/_test/latest-token?identifier=%2B15553002002")
         cp_token = resp.json()["token"]
         resp = client.get(f"/auth/verify?token={cp_token}")
         cp_session = resp.json()["session_token"]
@@ -254,12 +235,12 @@ class TestBetAcceptance:
         data = resp.json()["data"]
         assert data["type"] == "bet"
         assert data["visibility"] == "hidden"
-        assert "bet_terms" not in data  # No plaintext
+        assert "bet_terms" not in data
         expected_hash = hashlib.sha256("Hidden bet secret terms".encode()).hexdigest()
         assert data["bet_terms_hash"] == expected_hash
 
     def test_block_does_not_contain_raw_identifiers(self, client):
-        """NFR5: No raw emails/phones on chain."""
+        """NFR5: No raw phone numbers on chain."""
         bet_id, cp_token = self._create_bet_and_get_acceptance_token(client)
 
         resp = client.get(f"/auth/verify?token={cp_token}")
@@ -274,15 +255,14 @@ class TestBetAcceptance:
 
         resp = client.get(f"/blocks/{block_hash}")
         data_str = str(resp.json()["data"])
-        assert "acceptinit@test.com" not in data_str
-        assert "acceptcp@test.com" not in data_str
+        assert "+15553001001" not in data_str
+        assert "+15553001002" not in data_str
 
     def test_only_counterparty_can_accept(self, client):
         """Only the designated counterparty can accept the bet."""
         bet_id, cp_token = self._create_bet_and_get_acceptance_token(client)
 
-        # A different user tries to accept
-        other_session = _get_session_token(client, "other@test.com")
+        other_session = _get_session_token(client, "+15553003001")
         resp = client.post(
             f"/bets/{bet_id}/respond",
             json={"accept": True},
@@ -292,21 +272,20 @@ class TestBetAcceptance:
 
     def test_hidden_bet_terms_scrubbed_after_accept(self, client, db_session):
         """FR12: Hidden bet plaintext is scrubbed from DB after acceptance."""
-        session = _get_session_token(client, "scrubacc@test.com")
+        session = _get_session_token(client, "+15553004001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "Scrub me after accept",
-                "counterparty_identifier": "scrubcp@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15553004002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "hidden",
             },
             headers={"Authorization": f"Bearer {session}"},
         )
         bet_id = resp.json()["bet_id"]
 
-        # Accept the bet
-        resp = client.get("/auth/_test/latest-token?identifier=scrubcp@test.com")
+        resp = client.get("/auth/_test/latest-token?identifier=%2B15553004002")
         cp_token = resp.json()["token"]
         resp = client.get(f"/auth/verify?token={cp_token}")
         cp_session = resp.json()["session_token"]
@@ -317,7 +296,6 @@ class TestBetAcceptance:
         )
         assert resp.status_code == 200
 
-        # Check the DB: plaintext should be scrubbed
         from app.models import PendingBet
         bet = db_session.query(PendingBet).filter(PendingBet.id == bet_id).first()
         assert bet is not None
@@ -338,7 +316,6 @@ class TestBetAcceptance:
         )
         assert resp.status_code == 200
 
-        # Bet row should be deleted from the database
         from app.models import PendingBet
         bet = db_session.query(PendingBet).filter(PendingBet.id == bet_id).first()
         assert bet is None
@@ -349,21 +326,20 @@ class TestBetExpiry:
 
     def test_expire_pending_bets(self, client):
         """Expired bets are cancelled via the expiry endpoint."""
-        session = _get_session_token(client, "expinit@test.com")
+        session = _get_session_token(client, "+15554001001")
         resp = client.post(
             "/bets",
             json={
                 "bet_terms": "This will expire",
-                "counterparty_identifier": "expcp@test.com",
-                "counterparty_identifier_type": "email",
+                "counterparty_identifier": "+15554001002",
+                "counterparty_identifier_type": "phone",
                 "visibility": "visible",
-                "expiry_hours": 0,  # Expire immediately
+                "expiry_hours": 0,
             },
             headers={"Authorization": f"Bearer {session}"},
         )
         bet_id = resp.json()["bet_id"]
 
-        # Trigger expiry check (requires service secret)
         resp = client.post(
             "/bets/_expire",
             headers={"X-Service-Secret": "test-service-secret"},

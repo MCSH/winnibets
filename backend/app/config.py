@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     debug: bool = False
     # Service secret for internal/admin endpoints (e.g., bet expiry cron)
     service_secret: str = ""
+    # Twilio SMS
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_number: str = ""
 
     model_config = {"env_prefix": "WINNIBETS_"}
 

@@ -28,7 +28,7 @@ components:
   schemas:
     IdentifierType:
       type: string
-      enum: [email, phone]
+      enum: [phone]
 
     Visibility:
       type: string
@@ -75,8 +75,8 @@ components:
         identifier:
           type: string
           minLength: 1
-          description: Email address or phone number
-          examples: ["user@example.com", "+14155551234"]
+          description: Phone number in E.164 format
+          examples: ["+14155551234"]
         identifier_type:
           $ref: "#/components/schemas/IdentifierType"
       required: [identifier, identifier_type]
@@ -140,7 +140,7 @@ components:
         counterparty_identifier:
           type: string
           minLength: 1
-          description: Email or phone of the counterparty
+          description: Phone number of the counterparty
         counterparty_identifier_type:
           $ref: "#/components/schemas/IdentifierType"
         visibility:
@@ -233,7 +233,7 @@ paths:
     post:
       operationId: request_magic_link
       summary: Request a magic link
-      description: Send a magic link to the user's email or phone. Creates the user if they don't exist.
+      description: Send a magic link to the user's phone via SMS. Creates the user if they don't exist.
       tags: [auth]
       requestBody:
         required: true

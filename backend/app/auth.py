@@ -36,7 +36,7 @@ def request_magic_link(
     body: MagicLinkRequest,
     db: Session = Depends(get_db),
 ):
-    """FR1: Send a magic link to the user's email or phone."""
+    """FR1: Send a magic link to the user's phone via SMS."""
     normalized = normalize_identifier(body.identifier)
 
     if not normalized:

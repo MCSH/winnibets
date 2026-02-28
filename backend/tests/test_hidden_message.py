@@ -5,13 +5,14 @@ import hashlib
 import pytest
 
 
-def _get_session_token(client, email="msg@test.com"):
+def _get_session_token(client, phone="+15551000000"):
     """Helper: register and get a session token."""
     client.post(
         "/auth/magic-link",
-        json={"identifier": email, "identifier_type": "email"},
+        json={"identifier": phone, "identifier_type": "phone"},
     )
-    resp = client.get(f"/auth/_test/latest-token?identifier={email}")
+    from urllib.parse import quote
+    resp = client.get(f"/auth/_test/latest-token?identifier={quote(phone, safe='')}")
     token = resp.json()["token"]
     resp = client.get(f"/auth/verify?token={token}")
     return resp.json()["session_token"]
@@ -97,7 +98,6 @@ class TestHiddenMessageOnChainData:
         )
         block_hash = resp.json()["block_hash"]
 
-        # Look up the block
         resp = client.get(f"/blocks/{block_hash}")
         assert resp.status_code == 200
         data = resp.json()["data"]
@@ -118,23 +118,21 @@ class TestHiddenMessageOnChainData:
 
         resp = client.get(f"/blocks/{block_hash}")
         data = resp.json()["data"]
-        # The plaintext must NOT appear anywhere in the block data
         assert plaintext not in str(data)
 
-    def test_block_does_not_contain_raw_email(self, client):
-        email = "rawcheck@test.com"
-        session = _get_session_token(client, email=email)
+    def test_block_does_not_contain_raw_phone(self, client):
+        phone = "+15559876543"
+        session = _get_session_token(client, phone=phone)
         resp = client.post(
             "/messages/hidden",
-            json={"plaintext": "Check for raw email"},
+            json={"plaintext": "Check for raw phone"},
             headers={"Authorization": f"Bearer {session}"},
         )
         block_hash = resp.json()["block_hash"]
 
         resp = client.get(f"/blocks/{block_hash}")
         data = resp.json()["data"]
-        # Raw email must NOT appear in block data (NFR5)
-        assert email not in str(data)
+        assert phone not in str(data)
 
 
 class TestPlaintextNonRetention:
@@ -148,7 +146,6 @@ class TestPlaintextNonRetention:
             json={"plaintext": plaintext},
             headers={"Authorization": f"Bearer {session}"},
         )
-        # The response should contain the hash, not the plaintext
         body = resp.json()
         assert plaintext not in str(body)
         expected_hash = hashlib.sha256(plaintext.encode("utf-8")).hexdigest()

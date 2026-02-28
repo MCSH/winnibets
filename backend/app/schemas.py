@@ -7,7 +7,6 @@ from pydantic import BaseModel, field_validator
 
 
 class IdentifierType(str, Enum):
-    email = "email"
     phone = "phone"
 
 

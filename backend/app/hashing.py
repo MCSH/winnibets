@@ -6,7 +6,7 @@ from app.config import settings
 
 
 def hash_identity(identifier: str) -> str:
-    """Compute salted SHA-256 of a normalized identifier (email or phone).
+    """Compute salted SHA-256 of a normalized identifier (phone number).
 
     Salting mitigates rainbow-table attacks on low-entropy identifiers
     (see PRD Risk section).
@@ -26,5 +26,5 @@ def hash_content(plaintext: str) -> str:
 
 
 def normalize_identifier(identifier: str) -> str:
-    """Normalize an identifier: lowercase email, strip phone."""
+    """Normalize an identifier: strip whitespace."""
     return identifier.strip().lower()
