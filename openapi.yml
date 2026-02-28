@@ -1,0 +1,624 @@
+openapi: 3.1.0
+info:
+  title: WinniBets Community Blockchain Ledger
+  description: Hidden Messages & Bets on a private blockchain
+  version: 0.1.0
+
+servers:
+  - url: https://api.winnibets.com
+    description: Winnibets
+
+tags:
+  - name: auth
+    description: Magic link authentication and session management
+  - name: messages
+    description: Hidden message submission
+  - name: bets
+    description: Bet creation, response, and expiry
+  - name: blocks
+    description: Block lookup and chain integrity verification
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Session token obtained from /auth/verify
+
+  schemas:
+    IdentifierType:
+      type: string
+      enum: [email, phone]
+
+    Visibility:
+      type: string
+      enum: [visible, hidden]
+
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required: [code, message]
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          $ref: "#/components/schemas/ErrorDetail"
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  oneOf:
+                    - type: string
+                    - type: integer
+              msg:
+                type: string
+              type:
+                type: string
+            required: [loc, msg, type]
+
+    MagicLinkRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          description: Email address or phone number
+          examples: ["user@example.com", "+14155551234"]
+        identifier_type:
+          $ref: "#/components/schemas/IdentifierType"
+      required: [identifier, identifier_type]
+
+    MagicLinkResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          examples: ["Magic link sent"]
+      required: [message]
+
+    VerifyResponse:
+      type: object
+      properties:
+        session_token:
+          type: string
+          description: Bearer token for authenticated requests
+      required: [session_token]
+
+    UserResponse:
+      type: object
+      properties:
+        identifier:
+          type: string
+        identifier_type:
+          type: string
+      required: [identifier, identifier_type]
+
+    HiddenMessageRequest:
+      type: object
+      properties:
+        plaintext:
+          type: string
+          minLength: 1
+          description: Message content (hashed and immediately discarded)
+      required: [plaintext]
+
+    HiddenMessageResponse:
+      type: object
+      properties:
+        message_hash:
+          type: string
+          description: SHA-256 hex digest of the plaintext
+        block_hash:
+          type: string
+          description: SHA-256 hex digest of the block
+        block_index:
+          type: integer
+        timestamp:
+          type: number
+          format: double
+      required: [message_hash, block_hash, block_index, timestamp]
+
+    BetCreateRequest:
+      type: object
+      properties:
+        bet_terms:
+          type: string
+          minLength: 1
+        counterparty_identifier:
+          type: string
+          minLength: 1
+          description: Email or phone of the counterparty
+        counterparty_identifier_type:
+          $ref: "#/components/schemas/IdentifierType"
+        visibility:
+          $ref: "#/components/schemas/Visibility"
+        expiry_hours:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Hours until the bet expires (default 72)
+      required:
+        - bet_terms
+        - counterparty_identifier
+        - counterparty_identifier_type
+        - visibility
+
+    BetCreateResponse:
+      type: object
+      properties:
+        bet_id:
+          type: integer
+        message:
+          type: string
+      required: [bet_id, message]
+
+    BetAcceptRequest:
+      type: object
+      properties:
+        accept:
+          type: boolean
+      required: [accept]
+
+    BetAcceptResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted, declined]
+        block_hash:
+          type: string
+          nullable: true
+        block_index:
+          type: integer
+          nullable: true
+        timestamp:
+          type: number
+          format: double
+          nullable: true
+      required: [status]
+
+    BlockLookupResponse:
+      type: object
+      properties:
+        block_index:
+          type: integer
+        timestamp:
+          type: number
+          format: double
+        record_type:
+          type: string
+          description: "Block type: genesis, hidden_message, or bet"
+        data:
+          type: object
+          additionalProperties: true
+      required: [block_index, timestamp, record_type, data]
+
+    IntegrityResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        blocks:
+          type: integer
+          nullable: true
+          description: Total block count (present when valid=true)
+        first_invalid_block:
+          type: integer
+          nullable: true
+          description: Index of first invalid block (present when valid=false)
+      required: [valid]
+
+    ExpireResponse:
+      type: object
+      properties:
+        expired_count:
+          type: integer
+      required: [expired_count]
+
+paths:
+  /auth/magic-link:
+    post:
+      operationId: request_magic_link
+      summary: Request a magic link
+      description: Send a magic link to the user's email or phone. Creates the user if they don't exist.
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MagicLinkRequest"
+      responses:
+        "200":
+          description: Magic link sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MagicLinkResponse"
+        "400":
+          description: Invalid identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: INVALID_IDENTIFIER
+                  message: Identifier must not be empty
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /auth/verify:
+    get:
+      operationId: verify_magic_link
+      summary: Verify a magic link token
+      description: Exchange a magic link token for a session token. Tokens are single-use.
+      tags: [auth]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session token returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResponse"
+        "401":
+          description: Invalid, used, or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalid:
+                  summary: Token not found
+                  value:
+                    detail:
+                      code: INVALID_TOKEN
+                      message: Invalid or expired magic link
+                used:
+                  summary: Token already used
+                  value:
+                    detail:
+                      code: TOKEN_USED
+                      message: Magic link has already been used
+                expired:
+                  summary: Token expired
+                  value:
+                    detail:
+                      code: TOKEN_EXPIRED
+                      message: Magic link has expired
+
+  /auth/me:
+    get:
+      operationId: get_me
+      summary: Get current user
+      description: Return the authenticated user's identifier and type.
+      tags: [auth]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /messages/hidden:
+    post:
+      operationId: submit_hidden_message
+      summary: Submit a hidden message
+      description: |
+        Hash and record a message on the blockchain. The plaintext is hashed
+        immediately and never persisted. Rate limited to 20 submissions per hour.
+      tags: [messages]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HiddenMessageRequest"
+      responses:
+        "201":
+          description: Message recorded on chain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiddenMessageResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until the rate limit resets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: RATE_LIMIT_EXCEEDED
+                  message: Rate limit exceeded
+
+  /bets:
+    post:
+      operationId: create_bet
+      summary: Create a bet
+      description: |
+        Create a bet and send an invitation to the counterparty via magic link.
+        Rate limited to 10 invitations per hour.
+      tags: [bets]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BetCreateRequest"
+      responses:
+        "201":
+          description: Bet created and invitation sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BetCreateResponse"
+        "400":
+          description: Self-bet or duplicate bet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                self_bet:
+                  summary: Betting against yourself
+                  value:
+                    detail:
+                      code: SELF_BET
+                      message: Cannot create a bet with yourself
+                duplicate:
+                  summary: Duplicate pending bet
+                  value:
+                    detail:
+                      code: DUPLICATE_BET
+                      message: A pending bet with identical terms already exists for this counterparty
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until the rate limit resets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bets/{bet_id}/respond:
+    post:
+      operationId: respond_to_bet
+      summary: Accept or decline a bet
+      description: |
+        Counterparty accepts or declines a bet. On acceptance, the bet is committed
+        to the blockchain. On decline, the pending bet is deleted.
+      tags: [bets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: bet_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BetAcceptRequest"
+      responses:
+        "200":
+          description: Bet response recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BetAcceptResponse"
+        "400":
+          description: Bet not pending or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                not_pending:
+                  summary: Bet already resolved
+                  value:
+                    detail:
+                      code: BET_NOT_PENDING
+                      message: Bet is already accepted
+                expired:
+                  summary: Bet expired
+                  value:
+                    detail:
+                      code: BET_EXPIRED
+                      message: This bet has expired
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the counterparty
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: NOT_COUNTERPARTY
+                  message: Only the designated counterparty can respond to this bet
+        "404":
+          description: Bet not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: BET_NOT_FOUND
+                  message: Bet not found
+
+  /bets/_expire:
+    post:
+      operationId: expire_pending_bets
+      summary: Expire pending bets
+      description: |
+        Cancel all pending bets past their expiry. Intended to be called by
+        a scheduler or cron job. Requires X-Service-Secret header.
+      tags: [bets]
+      parameters:
+        - name: X-Service-Secret
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expired bets count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpireResponse"
+        "403":
+          description: Invalid service secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: FORBIDDEN
+                  message: Invalid service secret
+        "503":
+          description: Service secret not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: SERVICE_SECRET_NOT_CONFIGURED
+                  message: Service secret not configured
+
+  /blocks/{block_hash}:
+    get:
+      operationId: lookup_block
+      summary: Look up a block by hash
+      description: Public endpoint to retrieve a block's data by its SHA-256 hash.
+      tags: [blocks]
+      parameters:
+        - name: block_hash
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-f0-9]{64}$"
+          description: SHA-256 hex digest of the block
+      responses:
+        "200":
+          description: Block found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockLookupResponse"
+        "404":
+          description: Block not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail:
+                  code: BLOCK_NOT_FOUND
+                  message: Block not found
+
+  /blocks/:
+    get:
+      operationId: verify_chain_integrity
+      summary: Verify chain integrity
+      description: Walk the entire blockchain and verify hash linkage of every block.
+      tags: [blocks]
+      responses:
+        "200":
+          description: Integrity check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrityResponse"
+              examples:
+                valid:
+                  summary: Chain is valid
+                  value:
+                    valid: true
+                    blocks: 42
+                invalid:
+                  summary: Chain has invalid block
+                  value:
+                    valid: false
+                    first_invalid_block: 15
