@@ -291,7 +291,10 @@ def _notify_bet_participants(
     if pending_bet.visibility == "visible":
         terms_info = f"Terms: {pending_bet.bet_terms}"
     else:
-        terms_info = f"Terms hash: {hash_content(pending_bet.bet_terms)}"
+        terms_info = (
+            f"Terms: {pending_bet.bet_terms}\n"
+            f"Terms hash: {hash_content(pending_bet.bet_terms)}"
+        )
 
     body_text = (
         f"A bet has been recorded on the chain.\n"
