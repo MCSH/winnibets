@@ -16,11 +16,17 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    const cleaned = identifier.trim();
+    let cleaned = identifier.trim();
 
     if (mode === "phone") {
-      if (!cleaned.startsWith("+") || cleaned.length < 8) {
-        setError("Enter phone in E.164 format, e.g. +14155551234");
+      // Strip formatting: spaces, dashes, parens, dots
+      const digits = cleaned.replace(/[\s\-().+]/g, "");
+      if (digits.length === 10) {
+        cleaned = `+1${digits}`;
+      } else if (digits.length === 11 && digits.startsWith("1")) {
+        cleaned = `+${digits}`;
+      } else {
+        setError("Enter a 10-digit phone number, e.g. 4155551234");
         return;
       }
     } else {
@@ -96,7 +102,7 @@ export default function Login() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder={
-                    mode === "phone" ? "+14155551234" : "you@example.com"
+                    mode === "phone" ? "(204) 555-1234" : "you@example.com"
                   }
                   className="w-full bg-ink border border-ink-border rounded px-4 py-3 text-chalk font-mono text-sm placeholder:text-ink-muted focus:outline-none focus:border-gold/60 transition-colors"
                   autoFocus

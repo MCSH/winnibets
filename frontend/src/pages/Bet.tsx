@@ -27,11 +27,16 @@ export default function Bet() {
 
     if (!terms.trim() || !counterparty.trim()) return;
 
-    const cleaned = counterparty.trim();
+    let cleaned = counterparty.trim();
 
     if (counterpartyMode === "phone") {
-      if (!cleaned.startsWith("+") || cleaned.length < 8) {
-        setError("Counterparty phone must be E.164 format, e.g. +14155551234");
+      const digits = cleaned.replace(/[\s\-().+]/g, "");
+      if (digits.length === 10) {
+        cleaned = `+1${digits}`;
+      } else if (digits.length === 11 && digits.startsWith("1")) {
+        cleaned = `+${digits}`;
+      } else {
+        setError("Enter a 10-digit phone number, e.g. 4155551234");
         return;
       }
     } else {
@@ -122,7 +127,7 @@ export default function Bet() {
               onChange={(e) => setCounterparty(e.target.value)}
               placeholder={
                 counterpartyMode === "phone"
-                  ? "+14155551234"
+                  ? "(204) 555-1234"
                   : "them@example.com"
               }
               className="w-full bg-ink border border-ink-border rounded px-4 py-3 text-chalk font-mono text-sm placeholder:text-ink-muted focus:outline-none focus:border-gold/60 transition-colors"
