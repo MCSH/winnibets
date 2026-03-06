@@ -2,8 +2,9 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, MessageSquarePlus, Swords } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AUTH_NAV = [
   { to: "/message", label: "Message" },
@@ -17,8 +18,12 @@ const PUBLIC_NAV = [{ to: "/explorer", label: "Explorer" }] as const;
 export default function Shell() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const showFabs =
+    user && !["/message", "/bet"].includes(location.pathname);
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -156,6 +161,42 @@ export default function Shell() {
           GitHub
         </a>
       </footer>
+
+      {/* Floating action buttons */}
+      <AnimatePresence>
+        {showFabs && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 right-6 flex flex-col gap-3 z-50"
+          >
+            <button
+              onClick={() => navigate("/message")}
+              className="group flex items-center gap-2 cursor-pointer"
+            >
+              <span className="hidden group-hover:block text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap">
+                New Message
+              </span>
+              <span className="size-12 rounded-full bg-ink-lighter border border-ink-border/50 shadow-lg flex items-center justify-center text-chalk-dim hover:text-accent hover:border-accent/50 transition-colors">
+                <MessageSquarePlus className="size-5" />
+              </span>
+            </button>
+            <button
+              onClick={() => navigate("/bet")}
+              className="group flex items-center gap-2 cursor-pointer"
+            >
+              <span className="hidden group-hover:block text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap">
+                New Bet
+              </span>
+              <span className="size-14 rounded-full bg-accent shadow-lg shadow-accent/25 flex items-center justify-center text-ink hover:bg-accent-bright transition-colors">
+                <Swords className="size-6" />
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
