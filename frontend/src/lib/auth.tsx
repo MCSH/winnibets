@@ -29,12 +29,23 @@ const Ctx = createContext<AuthCtx>({
   refresh: async () => {},
 });
 
+function getToken(): string | null {
+  // Migrate legacy sessionStorage token to localStorage
+  const legacy = sessionStorage.getItem("token");
+  if (legacy) {
+    localStorage.setItem("token", legacy);
+    sessionStorage.removeItem("token");
+    return legacy;
+  }
+  return localStorage.getItem("token");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const token = sessionStorage.getItem("token");
+    const token = getToken();
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -44,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await getMe();
       setUser(me);
     } catch {
-      sessionStorage.removeItem("token");
+      localStorage.removeItem("token");
       setUser(null);
     } finally {
       setLoading(false);
@@ -57,14 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     (token: string) => {
-      sessionStorage.setItem("token", token);
+      localStorage.setItem("token", token);
       refresh();
     },
     [refresh],
   );
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem("token");
+    localStorage.removeItem("token");
     setUser(null);
   }, []);
 
