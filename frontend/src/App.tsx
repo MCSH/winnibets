@@ -27,7 +27,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -52,10 +52,7 @@ function AppRoutes() {
         <Route path="/explorer" element={<Explorer />} />
 
         {/* Protected */}
-        <Route
-          index
-          element={user ? <Home /> : <Navigate to="/explorer" replace />}
-        />
+        <Route index element={<Home />} />
         <Route
           path="/message"
           element={

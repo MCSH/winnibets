@@ -10,10 +10,10 @@ const AUTH_NAV = [
   { to: "/message", label: "Message" },
   { to: "/bet", label: "Place Bet" },
   { to: "/pending", label: "Pending" },
-  { to: "/explorer", label: "Explorer" },
+  { to: "/explorer", label: "Ledger" },
 ] as const;
 
-const PUBLIC_NAV = [{ to: "/explorer", label: "Explorer" }] as const;
+const PUBLIC_NAV = [{ to: "/explorer", label: "Ledger" }] as const;
 
 export default function Shell() {
   const { user, logout } = useAuth();

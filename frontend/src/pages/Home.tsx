@@ -28,10 +28,10 @@ const FEATURES: {
   },
   {
     to: "/explorer",
-    title: "Explore the Chain",
-    desc: "Every message and bet lives here. Search by hash, browse blocks, verify integrity.",
+    title: "Global Ledger",
+    desc: "Every bet and message lives here for good. Browse the public record and verify any claim.",
     icon: <Search className="size-5" />,
-    cta: "Open Explorer",
+    cta: "View Ledger",
   },
 ];
 
