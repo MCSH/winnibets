@@ -13,16 +13,8 @@ import { MessageCircle, Mail, ArrowLeft } from "lucide-react";
 type AuthMode = "phone" | "email";
 
 export default function Login() {
-  const lastLogin = (() => {
-    try {
-      const raw = localStorage.getItem("winnibets_last_login");
-      if (raw) return JSON.parse(raw) as { mode: AuthMode; identifier: string };
-    } catch { /* ignore */ }
-    return null;
-  })();
-
-  const [mode, setMode] = useState<AuthMode>(lastLogin?.mode ?? "phone");
-  const [identifier, setIdentifier] = useState(lastLogin?.identifier ?? "");
+  const [mode, setMode] = useState<AuthMode>("phone");
+  const [identifier, setIdentifier] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +53,6 @@ export default function Login() {
     setLoading(true);
     try {
       await requestMagicLink(cleaned, mode);
-      localStorage.setItem("winnibets_last_login", JSON.stringify({ mode, identifier: cleaned }));
       setSent(true);
     } catch (err) {
       setError((err as Error).message);
@@ -140,7 +131,12 @@ export default function Login() {
                   </motion.p>
                 )}
 
-                <Button type="submit" disabled={loading} className="w-full" size="lg">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full"
+                  size="lg"
+                >
                   {loading ? "Sending..." : "Continue"}
                 </Button>
 
@@ -157,7 +153,12 @@ export default function Login() {
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20,
+                    delay: 0.1,
+                  }}
                   className="w-14 h-14 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center mx-auto"
                 >
                   {mode === "phone" ? (
