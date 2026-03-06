@@ -15,8 +15,6 @@ class Settings(BaseSettings):
     magic_link_base_url: str = "http://localhost:8000"
     # Session token expiry
     session_token_expiry_hours: int = 24
-    # Bet defaults
-    bet_default_expiry_hours: int = 72
     # Rate limits
     rate_limit_submissions_per_hour: int = 20
     rate_limit_bet_invitations_per_hour: int = 10

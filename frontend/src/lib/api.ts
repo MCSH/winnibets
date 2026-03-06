@@ -90,7 +90,6 @@ export function createBet(params: {
   counterparty_identifier: string;
   counterparty_identifier_type: "phone" | "email";
   visibility: "visible" | "hidden";
-  expiry_hours?: number;
 }) {
   return request<{ bet_id: number; message: string }>("/bets", {
     method: "POST",

@@ -14,15 +14,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Send,
-  Check,
-  Eye,
-  EyeOff,
-  Clock,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Check, Eye, EyeOff } from "lucide-react";
 
 interface BetResult {
   bet_id: number;
@@ -33,7 +25,10 @@ type CounterpartyMode = "phone" | "email";
 type Visibility = "visible" | "hidden";
 
 const STEPS = [
-  { title: "What's the Bet?", description: "Write it out — make it clear, no take-backs" },
+  {
+    title: "What's the Bet?",
+    description: "Write it out — make it clear, no take-backs",
+  },
   { title: "Who's In?", description: "Pick your opponent" },
   { title: "Lock It In", description: "Choose your settings and send it" },
 ] as const;
@@ -45,7 +40,6 @@ export default function Bet() {
   const [counterpartyMode, setCounterpartyMode] =
     useState<CounterpartyMode>("phone");
   const [visibility, setVisibility] = useState<Visibility>("visible");
-  const [expiryHours, setExpiryHours] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<BetResult | null>(null);
@@ -107,7 +101,6 @@ export default function Bet() {
         counterparty_identifier: cleaned,
         counterparty_identifier_type: counterpartyMode,
         visibility,
-        ...(expiryHours ? { expiry_hours: Number(expiryHours) } : {}),
       });
       setResult(res);
     } catch (err) {
@@ -121,7 +114,6 @@ export default function Bet() {
     setStep(0);
     setTerms("");
     setCounterparty("");
-    setExpiryHours("");
     setVisibility("visible");
     setResult(null);
     setError("");
@@ -161,9 +153,7 @@ export default function Bet() {
                   <p className="text-sm font-semibold text-accent">
                     Invitation Sent
                   </p>
-                  <p className="text-xs text-chalk-dim">
-                    Bet #{result.bet_id}
-                  </p>
+                  <p className="text-xs text-chalk-dim">Bet #{result.bet_id}</p>
                 </div>
               </div>
               <p className="text-sm text-chalk">{result.message}</p>
@@ -342,24 +332,6 @@ export default function Bet() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>
-                      <Clock className="size-3 inline mr-1" />
-                      Expiry (optional)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={expiryHours}
-                      onChange={(e) => setExpiryHours(e.target.value)}
-                      placeholder="72"
-                      min={1}
-                    />
-                    <p className="text-[11px] text-ink-muted">
-                      Hours until the invitation expires. Leave blank for no
-                      expiry.
-                    </p>
-                  </div>
-
                   {/* Summary */}
                   <div className="bg-ink/40 border border-ink-border/30 rounded-lg p-4 space-y-2">
                     <p className="text-xs font-medium text-chalk-dim uppercase tracking-wider">
@@ -373,8 +345,7 @@ export default function Bet() {
                       <span className="font-mono text-chalk-dim">
                         {counterparty}
                       </span>{" "}
-                      &middot; {visibility} terms
-                      {expiryHours && ` · expires in ${expiryHours}h`}
+                      &middot; {visibility} terms · expires in 72h
                     </p>
                   </div>
                 </div>
@@ -415,18 +386,12 @@ export default function Bet() {
                 )}
 
                 {step < 2 ? (
-                  <Button
-                    onClick={validateAndAdvance}
-                    disabled={!canAdvance()}
-                  >
+                  <Button onClick={validateAndAdvance} disabled={!canAdvance()}>
                     Next
                     <ArrowRight className="size-3.5" />
                   </Button>
                 ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                  >
+                  <Button onClick={handleSubmit} disabled={loading}>
                     {loading ? (
                       "Sending..."
                     ) : (

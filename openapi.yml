@@ -145,11 +145,6 @@ components:
           $ref: "#/components/schemas/IdentifierType"
         visibility:
           $ref: "#/components/schemas/Visibility"
-        expiry_hours:
-          type: integer
-          minimum: 1
-          nullable: true
-          description: Hours until the bet expires (default 72)
       required:
         - bet_terms
         - counterparty_identifier

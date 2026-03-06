@@ -324,8 +324,11 @@ class TestBetAcceptance:
 class TestBetExpiry:
     """FR7: Bets expire if counterparty doesn't respond."""
 
-    def test_expire_pending_bets(self, client):
+    def test_expire_pending_bets(self, client, db_session):
         """Expired bets are cancelled via the expiry endpoint."""
+        from datetime import datetime, timezone
+        from app.models import PendingBet
+
         session = _get_session_token(client, "+15554001001")
         resp = client.post(
             "/bets",
@@ -334,11 +337,15 @@ class TestBetExpiry:
                 "counterparty_identifier": "+15554001002",
                 "counterparty_identifier_type": "phone",
                 "visibility": "visible",
-                "expiry_hours": 0,
             },
             headers={"Authorization": f"Bearer {session}"},
         )
         bet_id = resp.json()["bet_id"]
+
+        # Backdate expires_at so the bet is already expired
+        bet = db_session.query(PendingBet).filter(PendingBet.id == bet_id).first()
+        bet.expires_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        db_session.commit()
 
         resp = client.post(
             "/bets/_expire",

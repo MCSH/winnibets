@@ -74,7 +74,6 @@ class BetCreateRequest(BaseModel):
     counterparty_identifier: str
     counterparty_identifier_type: IdentifierType
     visibility: Visibility
-    expiry_hours: Optional[int] = None  # Defaults to 72 hours
 
     @field_validator("bet_terms")
     @classmethod

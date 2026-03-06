@@ -84,9 +84,8 @@ def create_bet(
     # consume rate limit slots.
     check_rate_limit(current_user.id, "bet_invitation")
 
-    # Determine expiry
-    expiry_hours = body.expiry_hours if body.expiry_hours is not None else settings.bet_default_expiry_hours
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=expiry_hours)
+    # Fixed 72-hour expiry
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=72)
 
     # Create pending bet (off-chain per FR4)
     pending_bet = PendingBet(
