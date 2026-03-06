@@ -122,6 +122,15 @@ export default function Shell() {
       {/* Footer */}
       <footer className="border-t border-ink-border/30 py-6 text-center text-xs text-ink-muted">
         Powered by linear algebra, made by MCSH
+        {" · "}
+        <a
+          href="https://github.com/mcsh/winnibets"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-ink-base transition-colors"
+        >
+          GitHub
+        </a>
       </footer>
     </div>
   );
