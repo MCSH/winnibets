@@ -60,11 +60,7 @@ export default function Message() {
       {/* Form */}
       <Card>
         <CardContent>
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-5"
-            autoComplete="off"
-          >
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Visibility toggle */}
             <div className="space-y-2">
               <Label>Visibility</Label>

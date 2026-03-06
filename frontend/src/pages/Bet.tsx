@@ -242,7 +242,6 @@ export default function Bet() {
                     rows={4}
                     placeholder="I bet that..."
                     autoFocus
-                    autoComplete="off"
                   />
                   <p className="text-[11px] text-ink-muted">
                     Be specific — this goes on the blockchain.
@@ -287,7 +286,6 @@ export default function Bet() {
                         onChange={(e) => setCounterparty(e.target.value)}
                         placeholder="them@example.com"
                         autoFocus
-                        autoComplete="off"
                       />
                     )}
                     <p className="text-[11px] text-ink-muted">

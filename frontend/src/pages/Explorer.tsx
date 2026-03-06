@@ -277,11 +277,7 @@ export default function Explorer() {
       {/* Lookup */}
       <Card>
         <CardContent>
-          <form
-            onSubmit={handleLookup}
-            className="space-y-4"
-            autoComplete="off"
-          >
+          <form onSubmit={handleLookup} className="space-y-4">
             <Label>Block Hash Lookup</Label>
             <div className="flex gap-2">
               <Input
