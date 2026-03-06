@@ -1,6 +1,4 @@
-import PhoneInput from "react-phone-number-input/input";
-import type { E164Number } from "libphonenumber-js/core";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 interface PhoneFieldProps {
   value: string;
@@ -18,17 +16,14 @@ export function PhoneField({
   placeholder = "(204) 555-1234",
 }: PhoneFieldProps) {
   return (
-    <PhoneInput
-      country="US"
-      international={false}
-      value={(value || undefined) as E164Number | undefined}
-      onChange={(v) => onChange(v ?? "")}
+    <Input
+      type="tel"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoFocus={autoFocus}
-      className={cn(
-        "flex h-10 w-full rounded-lg border border-ink-border bg-ink px-4 py-2 text-[16px] text-chalk placeholder:text-ink-muted transition-colors focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-1 focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm",
-        className,
-      )}
+      autoComplete="tel"
+      className={className}
     />
   );
 }
