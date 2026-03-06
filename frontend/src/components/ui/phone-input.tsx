@@ -25,6 +25,7 @@ export function PhoneField({
       onChange={(v) => onChange(v ?? "")}
       placeholder={placeholder}
       autoFocus={autoFocus}
+      autoComplete="off"
       className={cn(
         "flex h-10 w-full rounded-lg border border-ink-border bg-ink px-4 py-2 text-[16px] text-chalk placeholder:text-ink-muted transition-colors focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-1 focus-visible:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm",
         className,

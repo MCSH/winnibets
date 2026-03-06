@@ -277,7 +277,11 @@ export default function Explorer() {
       {/* Lookup */}
       <Card>
         <CardContent>
-          <form onSubmit={handleLookup} className="space-y-4">
+          <form
+            onSubmit={handleLookup}
+            className="space-y-4"
+            autoComplete="off"
+          >
             <Label>Block Hash Lookup</Label>
             <div className="flex gap-2">
               <Input
@@ -394,9 +398,7 @@ export default function Explorer() {
               exit={{ opacity: 0 }}
             >
               <Card
-                className={
-                  integrity.valid ? "border-win/30" : "border-lose/30"
-                }
+                className={integrity.valid ? "border-win/30" : "border-lose/30"}
               >
                 <CardContent>
                   <div className="flex items-center gap-3">

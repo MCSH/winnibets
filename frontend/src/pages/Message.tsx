@@ -60,7 +60,11 @@ export default function Message() {
       {/* Form */}
       <Card>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+            autoComplete="off"
+          >
             {/* Visibility toggle */}
             <div className="space-y-2">
               <Label>Visibility</Label>
@@ -86,7 +90,8 @@ export default function Message() {
 
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest">
-                SHA-256 {visibility === "hidden" && <>&middot; Zero-knowledge</>}
+                SHA-256{" "}
+                {visibility === "hidden" && <>&middot; Zero-knowledge</>}
               </span>
               <Button type="submit" disabled={loading || !text.trim()}>
                 {loading ? "Submitting..." : "Commit to Chain"}
@@ -140,7 +145,10 @@ export default function Message() {
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <HashDisplay label="Message Hash" hash={receipt.message_hash} />
+                  <HashDisplay
+                    label="Message Hash"
+                    hash={receipt.message_hash}
+                  />
                   <HashDisplay label="Block Hash" hash={receipt.block_hash} />
                 </div>
 

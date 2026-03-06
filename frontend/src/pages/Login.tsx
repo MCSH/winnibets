@@ -85,7 +85,11 @@ export default function Login() {
         <Card>
           <CardContent>
             {!sent ? (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-5"
+                autoComplete="off"
+              >
                 {/* Mode Toggle */}
                 <ToggleGroup
                   value={mode}
