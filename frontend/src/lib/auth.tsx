@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await getMe();
       setUser(me);
     } catch {
-      sessionStorage.removeItem("token");
+      localStorage.removeItem("token");
       setUser(null);
     } finally {
       setLoading(false);
@@ -57,14 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     (token: string) => {
-      sessionStorage.setItem("token", token);
+      localStorage.setItem("token", token);
       refresh();
     },
     [refresh],
   );
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem("token");
+    localStorage.removeItem("token");
     setUser(null);
   }, []);
 

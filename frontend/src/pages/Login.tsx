@@ -13,8 +13,16 @@ import { MessageCircle, Mail, ArrowLeft } from "lucide-react";
 type AuthMode = "phone" | "email";
 
 export default function Login() {
-  const [mode, setMode] = useState<AuthMode>("phone");
-  const [identifier, setIdentifier] = useState("");
+  const lastLogin = (() => {
+    try {
+      const raw = localStorage.getItem("winnibets_last_login");
+      if (raw) return JSON.parse(raw) as { mode: AuthMode; identifier: string };
+    } catch { /* ignore */ }
+    return null;
+  })();
+
+  const [mode, setMode] = useState<AuthMode>(lastLogin?.mode ?? "phone");
+  const [identifier, setIdentifier] = useState(lastLogin?.identifier ?? "");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,6 +61,7 @@ export default function Login() {
     setLoading(true);
     try {
       await requestMagicLink(cleaned, mode);
+      localStorage.setItem("winnibets_last_login", JSON.stringify({ mode, identifier: cleaned }));
       setSent(true);
     } catch (err) {
       setError((err as Error).message);
