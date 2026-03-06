@@ -1,8 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { submitMessage } from "../lib/api";
+import { submitMessage } from "@/lib/api";
 import { motion, AnimatePresence } from "motion/react";
-import Card from "../components/Card";
-import HashDisplay from "../components/HashDisplay";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { ToggleGroup } from "@/components/ui/toggle-group";
+import { Card, CardContent } from "@/components/ui/card";
+import HashDisplay from "@/components/HashDisplay";
+import { Check, AlertTriangle } from "lucide-react";
 
 type Visibility = "visible" | "hidden";
 
@@ -43,69 +48,65 @@ export default function Message() {
       {/* Header */}
       <div>
         <h1 className="font-display text-4xl tracking-wide text-chalk">
-          MESSAGE
+          DROP A MESSAGE
         </h1>
         <p className="text-chalk-dim text-sm mt-1">
           {visibility === "hidden"
-            ? "Your plaintext is hashed and immediately discarded. Only the cryptographic proof lives on-chain."
-            : "Your message will be stored in plaintext on the blockchain, visible to anyone."}
+            ? "Your words get hashed and the original is destroyed. Only the proof stays on-chain."
+            : "This goes on the blockchain in full — anyone can see it."}
         </p>
       </div>
 
       {/* Form */}
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Visibility toggle */}
-          <div>
-            <label className="block text-xs font-medium text-chalk-dim mb-2 uppercase tracking-wider">
-              Visibility
-            </label>
-            <div className="flex gap-2">
-              {(["hidden", "visible"] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setVisibility(v)}
-                  className={`px-4 py-2 rounded text-sm font-medium transition-colors cursor-pointer ${
-                    visibility === v
-                      ? "bg-gold text-ink"
-                      : "bg-ink border border-ink-border text-chalk-dim hover:border-gold/40"
-                  }`}
-                >
-                  {v === "hidden" ? "Hidden" : "Open"}
-                </button>
-              ))}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Visibility toggle */}
+            <div className="space-y-2">
+              <Label>Visibility</Label>
+              <ToggleGroup
+                value={visibility}
+                onValueChange={setVisibility}
+                options={[
+                  { value: "hidden", label: "Hidden" },
+                  { value: "visible", label: "Open" },
+                ]}
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-chalk-dim mb-2 uppercase tracking-wider">
-              Message
-            </label>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={4}
-              placeholder="Type your message here..."
-              className="w-full bg-ink border border-ink-border rounded px-4 py-3 text-chalk text-sm placeholder:text-ink-muted focus:outline-none focus:border-gold/60 transition-colors resize-none"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={4}
+                placeholder="Type your message here..."
+              />
+            </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest">
-              SHA-256 {visibility === "hidden" && <>&middot; Zero-knowledge</>}
-            </span>
-            <button
-              type="submit"
-              disabled={loading || !text.trim()}
-              className="bg-gold hover:bg-gold-bright text-ink font-semibold px-6 py-2.5 rounded transition-colors disabled:opacity-40 cursor-pointer"
-            >
-              {loading ? "Submitting..." : "Commit to Chain"}
-            </button>
-          </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest">
+                SHA-256 {visibility === "hidden" && <>&middot; Zero-knowledge</>}
+              </span>
+              <Button type="submit" disabled={loading || !text.trim()}>
+                {loading ? "Submitting..." : "Commit to Chain"}
+              </Button>
+            </div>
 
-          {error && <p className="text-lose text-xs font-medium">{error}</p>}
-        </form>
+            <AnimatePresence>
+              {error && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-lose text-xs font-medium"
+                >
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </form>
+        </CardContent>
       </Card>
 
       {/* Receipt */}
@@ -116,41 +117,56 @@ export default function Message() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <Card className="space-y-4 border-gold/30">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-win animate-pulse" />
-                <span className="text-xs font-semibold text-win uppercase tracking-wider">
-                  Committed to chain
-                  {receipt.visibility === "visible" ? " (open)" : " (hidden)"}
-                </span>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <HashDisplay label="Message Hash" hash={receipt.message_hash} />
-                <HashDisplay label="Block Hash" hash={receipt.block_hash} />
-              </div>
-
-              <div className="flex gap-6 text-xs text-chalk-dim">
-                <span>
-                  Block{" "}
-                  <span className="font-mono text-chalk">
-                    #{receipt.block_index}
+            <Card className="border-accent/30">
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 15,
+                      delay: 0.1,
+                    }}
+                    className="w-8 h-8 rounded-full bg-win/15 flex items-center justify-center"
+                  >
+                    <Check className="size-4 text-win" />
+                  </motion.div>
+                  <span className="text-sm font-semibold text-win">
+                    Committed to chain
+                    {receipt.visibility === "visible" ? " (open)" : " (hidden)"}
                   </span>
-                </span>
-                <span>
-                  {new Date(receipt.timestamp * 1000).toLocaleString()}
-                </span>
-              </div>
-
-              {receipt.visibility === "hidden" && (
-                <div className="bg-ink/40 border border-ink-border/30 rounded px-3 py-2">
-                  <p className="text-[11px] text-ink-muted">
-                    Save your original message securely. It is the only way to
-                    prove this hash belongs to you. WinniBets does not store
-                    your plaintext.
-                  </p>
                 </div>
-              )}
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <HashDisplay label="Message Hash" hash={receipt.message_hash} />
+                  <HashDisplay label="Block Hash" hash={receipt.block_hash} />
+                </div>
+
+                <div className="flex gap-6 text-xs text-chalk-dim">
+                  <span>
+                    Block{" "}
+                    <span className="font-mono text-chalk">
+                      #{receipt.block_index}
+                    </span>
+                  </span>
+                  <span>
+                    {new Date(receipt.timestamp * 1000).toLocaleString()}
+                  </span>
+                </div>
+
+                {receipt.visibility === "hidden" && (
+                  <div className="flex items-start gap-2 bg-ink/40 border border-ink-border/30 rounded-lg px-3 py-2.5">
+                    <AlertTriangle className="size-3.5 text-highlight mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-ink-muted">
+                      Save your original message securely. It is the only way to
+                      prove this hash belongs to you. WinniBets does not store
+                      your plaintext.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </motion.div>
         )}

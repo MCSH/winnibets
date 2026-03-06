@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { verifyToken } from "../lib/api";
-import { useAuth } from "../lib/auth";
+import { verifyToken } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { XCircle } from "lucide-react";
 
 export default function Verify() {
   const [params] = useSearchParams();
@@ -40,35 +42,27 @@ export default function Verify() {
       >
         {error ? (
           <>
-            <div className="w-12 h-12 rounded-full bg-lose/10 border border-lose/30 flex items-center justify-center mx-auto">
-              <svg
-                className="w-6 h-6 text-lose"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <XCircle className="size-12 text-lose mx-auto" />
+            </motion.div>
             <h2 className="text-lg font-semibold text-chalk">
               Verification failed
             </h2>
             <p className="text-sm text-chalk-dim">{error}</p>
-            <button
+            <Button
+              variant="link"
               onClick={() => navigate("/login", { replace: true })}
-              className="text-sm text-gold hover:text-gold-bright transition-colors cursor-pointer"
             >
               Try again
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-sm text-chalk-dim">Verifying...</p>
           </>
         )}

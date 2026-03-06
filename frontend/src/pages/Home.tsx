@@ -1,93 +1,76 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../lib/auth";
+import { useAuth } from "@/lib/auth";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { Lock, Zap, Search, ArrowRight } from "lucide-react";
+import type { ReactNode } from "react";
 
-const FEATURES = [
+const FEATURES: {
+  to: string;
+  title: string;
+  desc: string;
+  icon: ReactNode;
+  cta: string;
+}[] = [
   {
     to: "/message",
-    title: "Hidden Message",
-    desc: "Record a tamper-proof, hash-only statement on the blockchain. Your plaintext is never stored.",
-    icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.5}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-        />
-      </svg>
-    ),
+    title: "Drop a Message",
+    desc: "Lock your words on-chain. Only the hash is stored — your secret stays yours.",
+    icon: <Lock className="size-5" />,
+    cta: "Write Message",
   },
   {
     to: "/bet",
-    title: "Place a Bet",
-    desc: "Create a two-party wager with visible or hidden terms. Your counterparty is invited via SMS.",
-    icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.5}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5"
-        />
-      </svg>
-    ),
+    title: "Challenge a Friend",
+    desc: "Set the terms, pick your opponent, and let the blockchain settle it. No take-backs.",
+    icon: <Zap className="size-5" />,
+    cta: "Place a Bet",
   },
   {
     to: "/explorer",
-    title: "Block Explorer",
-    desc: "Look up any block by hash or verify the integrity of the entire chain.",
-    icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.5}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-        />
-      </svg>
-    ),
+    title: "Explore the Chain",
+    desc: "Every message and bet lives here. Search by hash, browse blocks, verify integrity.",
+    icon: <Search className="size-5" />,
+    cta: "Open Explorer",
   },
-] as const;
+];
 
 export default function Home() {
   const { user } = useAuth();
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-14">
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center pt-8 pb-4"
+        transition={{ duration: 0.4 }}
+        className="text-center pt-10 pb-2"
       >
-        <h1 className="font-display text-5xl sm:text-7xl tracking-wider text-gold leading-none">
+        <h1 className="font-display text-5xl sm:text-7xl tracking-wider text-accent leading-none">
           WINNIBETS
         </h1>
-        <p className="text-chalk-dim mt-3 max-w-md mx-auto">
-          Tamper-proof hidden messages and provable bets on a community
-          blockchain.
+        <p className="text-chalk-dim mt-3 max-w-lg mx-auto text-lg">
+          Make it official. Prove it on-chain.
         </p>
-        {user && (
+        {user ? (
           <p className="text-xs text-ink-muted mt-4 font-mono">
-            Logged in as {user.identifier}
+            Welcome back, {user.identifier}
           </p>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-6"
+          >
+            <Link to="/login" className="no-underline">
+              <Button size="lg">
+                Get Started
+                <ArrowRight className="size-4" />
+              </Button>
+            </Link>
+          </motion.div>
         )}
       </motion.div>
 
@@ -96,34 +79,47 @@ export default function Home() {
         {FEATURES.map((f, i) => (
           <motion.div
             key={f.to}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 + i * 0.08 }}
+            transition={{ duration: 0.35, delay: 0.15 + i * 0.1 }}
+            whileHover={{ y: -6, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <Link
               to={f.to}
-              className="block group bg-ink-light border border-ink-border/60 rounded-lg p-6 hover:border-gold/40 transition-colors no-underline h-full"
+              className="block group bg-ink-light border border-ink-border/60 rounded-xl p-6 hover:border-accent/50 transition-all duration-300 no-underline h-full hover:shadow-xl hover:shadow-accent/10"
             >
-              <div className="w-10 h-10 rounded bg-gold/10 border border-gold/20 flex items-center justify-center text-gold mb-4 group-hover:bg-gold/15 transition-colors">
+              <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent mb-4 group-hover:bg-accent/20 group-hover:border-accent/40 group-hover:shadow-lg group-hover:shadow-accent/10 transition-all duration-300">
                 {f.icon}
               </div>
-              <h3 className="font-display text-xl tracking-wide text-chalk mb-2">
+              <h3 className="font-display text-2xl tracking-wide text-chalk mb-2 group-hover:text-accent transition-colors">
                 {f.title}
               </h3>
-              <p className="text-xs text-chalk-dim leading-relaxed">{f.desc}</p>
+              <p className="text-sm text-chalk-dim leading-relaxed mb-4">
+                {f.desc}
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent group-hover:gap-2.5 transition-all">
+                {f.cta}
+                <ArrowRight className="size-3.5" />
+              </span>
             </Link>
           </motion.div>
         ))}
       </div>
 
-      {/* Info */}
-      <div className="flex items-center gap-3 justify-center">
+      {/* Trust bar */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="flex items-center gap-3 justify-center"
+      >
         <div className="flex-1 max-w-[80px] h-px bg-ink-border/40" />
         <span className="text-[10px] text-ink-muted font-mono uppercase tracking-widest">
           SHA-256 &middot; Private Chain &middot; Zero Trust
         </span>
         <div className="flex-1 max-w-[80px] h-px bg-ink-border/40" />
-      </div>
+      </motion.div>
     </div>
   );
 }

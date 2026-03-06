@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { listPendingBets, respondToBet, type PendingBet } from "../lib/api";
-import Card from "../components/Card";
-import HashDisplay from "../components/HashDisplay";
+import { listPendingBets, respondToBet, type PendingBet } from "@/lib/api";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import HashDisplay from "@/components/HashDisplay";
 import { motion, AnimatePresence } from "motion/react";
+import { Check, X, Clock, Inbox } from "lucide-react";
 
 interface BetResult {
   betId: number;
@@ -66,17 +69,30 @@ export default function PendingBets() {
 
       {loading && (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
-      {error && <p className="text-lose text-xs font-medium">{error}</p>}
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-lose text-xs font-medium"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {!loading && bets.length === 0 && Object.keys(results).length === 0 && (
         <Card>
-          <p className="text-chalk-dim text-sm text-center py-6">
-            No pending bets. You're all caught up.
-          </p>
+          <CardContent className="text-center py-10 space-y-3">
+            <Inbox className="size-10 text-ink-muted mx-auto" />
+            <p className="text-chalk-dim text-sm">
+              No pending bets. You&apos;re all caught up.
+            </p>
+          </CardContent>
         </Card>
       )}
 
@@ -90,41 +106,63 @@ export default function PendingBets() {
             exit={{ opacity: 0 }}
           >
             <Card
-              className={`space-y-3 ${r.status === "accepted" ? "border-win/30" : "border-lose/30"}`}
+              className={
+                r.status === "accepted"
+                  ? "border-win/30"
+                  : "border-lose/30"
+              }
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-2 h-2 rounded-full ${r.status === "accepted" ? "bg-win" : "bg-lose"}`}
-                />
-                <span
-                  className={`text-xs font-semibold uppercase tracking-wider ${r.status === "accepted" ? "text-win" : "text-lose"}`}
-                >
-                  Bet #{r.betId} {r.status}
-                </span>
-              </div>
-              {r.status === "accepted" && r.block_hash && (
-                <div className="space-y-2">
-                  <HashDisplay label="Block Hash" hash={r.block_hash} />
-                  <div className="flex gap-6 text-xs text-chalk-dim">
-                    <span>
-                      Block{" "}
-                      <span className="font-mono text-chalk">
-                        #{r.block_index}
-                      </span>
-                    </span>
-                    {r.timestamp && (
-                      <span>
-                        {new Date(r.timestamp * 1000).toLocaleString()}
-                      </span>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      r.status === "accepted"
+                        ? "bg-win/15"
+                        : "bg-lose/15"
+                    }`}
+                  >
+                    {r.status === "accepted" ? (
+                      <Check className="size-4 text-win" />
+                    ) : (
+                      <X className="size-4 text-lose" />
                     )}
-                  </div>
+                  </motion.div>
+                  <span
+                    className={`text-sm font-semibold ${
+                      r.status === "accepted" ? "text-win" : "text-lose"
+                    }`}
+                  >
+                    Bet #{r.betId} {r.status}
+                  </span>
                 </div>
-              )}
-              {r.status === "declined" && (
-                <p className="text-sm text-chalk-dim">
-                  The bet has been declined and the initiator has been notified.
-                </p>
-              )}
+                {r.status === "accepted" && r.block_hash && (
+                  <div className="space-y-2">
+                    <HashDisplay label="Block Hash" hash={r.block_hash} />
+                    <div className="flex gap-6 text-xs text-chalk-dim">
+                      <span>
+                        Block{" "}
+                        <span className="font-mono text-chalk">
+                          #{r.block_index}
+                        </span>
+                      </span>
+                      {r.timestamp && (
+                        <span>
+                          {new Date(r.timestamp * 1000).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {r.status === "declined" && (
+                  <p className="text-sm text-chalk-dim">
+                    The bet has been declined and the initiator has been
+                    notified.
+                  </p>
+                )}
+              </CardContent>
             </Card>
           </motion.div>
         ))}
@@ -139,54 +177,66 @@ export default function PendingBets() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
           >
-            <Card className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gold uppercase tracking-wider">
-                  Bet #{bet.bet_id}
-                </span>
-                <span className="text-[10px] font-mono text-ink-muted">
-                  {timeRemaining(bet.expires_at)} left
-                </span>
-              </div>
+            <Card className="hover:border-ink-muted transition-colors">
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="gold">Bet #{bet.bet_id}</Badge>
+                    <Badge
+                      variant={
+                        bet.visibility === "hidden" ? "default" : "green"
+                      }
+                    >
+                      {bet.visibility}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">
+                    <Clock className="size-3" />
+                    {timeRemaining(bet.expires_at)} left
+                  </div>
+                </div>
 
-              <div>
-                <p className="text-xs text-chalk-dim mb-1 uppercase tracking-wider">
-                  Terms
-                </p>
-                <p className="text-sm text-chalk bg-ink rounded px-3 py-2 border border-ink-border">
-                  {bet.bet_terms}
-                </p>
-              </div>
+                <div className="bg-ink rounded-lg px-4 py-3 border border-ink-border/40">
+                  <p className="text-sm text-chalk">{bet.bet_terms}</p>
+                </div>
 
-              <div className="flex items-center gap-4 text-xs text-chalk-dim">
-                <span>
-                  From{" "}
-                  <span className="font-mono text-chalk">
-                    {bet.initiator_identifier}
+                <div className="flex items-center gap-4 text-xs text-chalk-dim">
+                  <span>
+                    From{" "}
+                    <span className="font-mono text-chalk">
+                      {bet.initiator_identifier}
+                    </span>
                   </span>
-                </span>
-                <span>
-                  {bet.visibility === "hidden" ? "Hidden" : "Visible"} bet
-                </span>
-                <span>Created {formatTime(bet.created_at)}</span>
-              </div>
+                  <span>Created {formatTime(bet.created_at)}</span>
+                </div>
 
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={() => handleRespond(bet.bet_id, true)}
-                  disabled={responding === bet.bet_id}
-                  className="flex-1 bg-win/15 border border-win/40 text-win font-semibold py-2.5 rounded hover:bg-win/25 transition-colors disabled:opacity-50 cursor-pointer text-sm"
-                >
-                  {responding === bet.bet_id ? "..." : "Accept"}
-                </button>
-                <button
-                  onClick={() => handleRespond(bet.bet_id, false)}
-                  disabled={responding === bet.bet_id}
-                  className="flex-1 bg-lose/10 border border-lose/30 text-lose font-semibold py-2.5 rounded hover:bg-lose/20 transition-colors disabled:opacity-50 cursor-pointer text-sm"
-                >
-                  Decline
-                </button>
-              </div>
+                <div className="flex gap-3 pt-1">
+                  <Button
+                    variant="success"
+                    className="flex-1"
+                    onClick={() => handleRespond(bet.bet_id, true)}
+                    disabled={responding === bet.bet_id}
+                  >
+                    {responding === bet.bet_id ? (
+                      "..."
+                    ) : (
+                      <>
+                        <Check className="size-3.5" />
+                        Accept
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => handleRespond(bet.bet_id, false)}
+                    disabled={responding === bet.bet_id}
+                  >
+                    <X className="size-3.5" />
+                    Decline
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
         ))}

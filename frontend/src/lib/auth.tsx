@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getMe } from "./api";
+import { getMe } from "@/lib/api";
 
 interface User {
   identifier: string;

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { respondToBet } from "../lib/api";
-import { useAuth } from "../lib/auth";
-import Card from "../components/Card";
-import HashDisplay from "../components/HashDisplay";
+import { respondToBet } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import HashDisplay from "@/components/HashDisplay";
 import { motion } from "motion/react";
+import { Check, X, LogIn } from "lucide-react";
 
 export default function BetRespond() {
   const { betId } = useParams<{ betId: string }>();
@@ -39,12 +41,10 @@ export default function BetRespond() {
         <p className="text-chalk-dim">
           You need to verify your identity first.
         </p>
-        <button
-          onClick={() => navigate("/login")}
-          className="text-gold hover:text-gold-bright transition-colors cursor-pointer"
-        >
+        <Button variant="link" onClick={() => navigate("/login")}>
+          <LogIn className="size-3.5" />
           Log in
-        </button>
+        </Button>
       </div>
     );
   }
@@ -59,74 +59,121 @@ export default function BetRespond() {
       </div>
 
       {!result ? (
-        <Card className="space-y-6">
-          <p className="text-sm text-chalk-dim">
-            Review the bet terms from the SMS you received, then accept or
-            decline below.
-          </p>
+        <Card>
+          <CardContent className="space-y-6">
+            <p className="text-sm text-chalk-dim">
+              Review the bet terms from the message you received, then accept or
+              decline below.
+            </p>
 
-          {error && <p className="text-lose text-xs font-medium">{error}</p>}
+            {error && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-lose text-xs font-medium"
+              >
+                {error}
+              </motion.p>
+            )}
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleRespond(true)}
-              disabled={loading}
-              className="flex-1 bg-win/15 border border-win/40 text-win font-semibold py-3 rounded hover:bg-win/25 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {loading ? "..." : "Accept"}
-            </button>
-            <button
-              onClick={() => handleRespond(false)}
-              disabled={loading}
-              className="flex-1 bg-lose/10 border border-lose/30 text-lose font-semibold py-3 rounded hover:bg-lose/20 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              Decline
-            </button>
-          </div>
+            <div className="flex gap-3">
+              <Button
+                variant="success"
+                className="flex-1"
+                onClick={() => handleRespond(true)}
+                disabled={loading}
+              >
+                {loading ? (
+                  "..."
+                ) : (
+                  <>
+                    <Check className="size-3.5" />
+                    Accept
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => handleRespond(false)}
+                disabled={loading}
+              >
+                <X className="size-3.5" />
+                Decline
+              </Button>
+            </div>
+          </CardContent>
         </Card>
       ) : (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
           <Card
-            className={`space-y-4 ${result.status === "accepted" ? "border-win/30" : "border-lose/30"}`}
+            className={
+              result.status === "accepted"
+                ? "border-win/30"
+                : "border-lose/30"
+            }
           >
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${result.status === "accepted" ? "bg-win" : "bg-lose"}`}
-              />
-              <span
-                className={`text-xs font-semibold uppercase tracking-wider ${result.status === "accepted" ? "text-win" : "text-lose"}`}
-              >
-                Bet {result.status}
-              </span>
-            </div>
-
-            {result.status === "accepted" && result.block_hash && (
-              <div className="space-y-3">
-                <HashDisplay label="Block Hash" hash={result.block_hash} />
-                <div className="flex gap-6 text-xs text-chalk-dim">
-                  <span>
-                    Block{" "}
-                    <span className="font-mono text-chalk">
-                      #{result.block_index}
-                    </span>
-                  </span>
-                  {result.timestamp && (
-                    <span>
-                      {new Date(result.timestamp * 1000).toLocaleString()}
-                    </span>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 15,
+                    delay: 0.1,
+                  }}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    result.status === "accepted"
+                      ? "bg-win/15"
+                      : "bg-lose/15"
+                  }`}
+                >
+                  {result.status === "accepted" ? (
+                    <Check className="size-4 text-win" />
+                  ) : (
+                    <X className="size-4 text-lose" />
                   )}
-                </div>
+                </motion.div>
+                <span
+                  className={`text-sm font-semibold ${
+                    result.status === "accepted" ? "text-win" : "text-lose"
+                  }`}
+                >
+                  Bet {result.status}
+                </span>
               </div>
-            )}
 
-            {result.status === "declined" && (
-              <p className="text-sm text-chalk-dim">
-                The bet has been declined and the initiator has been notified.
-              </p>
-            )}
+              {result.status === "accepted" && result.block_hash && (
+                <div className="space-y-3">
+                  <HashDisplay label="Block Hash" hash={result.block_hash} />
+                  <div className="flex gap-6 text-xs text-chalk-dim">
+                    <span>
+                      Block{" "}
+                      <span className="font-mono text-chalk">
+                        #{result.block_index}
+                      </span>
+                    </span>
+                    {result.timestamp && (
+                      <span>
+                        {new Date(result.timestamp * 1000).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {result.status === "declined" && (
+                <p className="text-sm text-chalk-dim">
+                  The bet has been declined and the initiator has been notified.
+                </p>
+              )}
+            </CardContent>
           </Card>
         </motion.div>
       )}

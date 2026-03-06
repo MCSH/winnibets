@@ -5,21 +5,28 @@
   --font-body: "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --color-ink: #0a0a0b;
-  --color-ink-light: #141417;
-  --color-ink-lighter: #1e1e24;
-  --color-ink-border: #2a2a33;
-  --color-ink-muted: #6b6b7b;
+  /* Dark surface hierarchy */
+  --color-ink: #0b0e11;
+  --color-ink-light: #131720;
+  --color-ink-lighter: #1a2030;
+  --color-ink-border: #252d3d;
+  --color-ink-muted: #5a6578;
 
-  --color-gold: #d4a843;
-  --color-gold-dim: #a07d2e;
-  --color-gold-bright: #f0c95c;
+  /* Primary — FanDuel-style vibrant blue */
+  --color-accent: #1493ff;
+  --color-accent-dim: #0d6ecc;
+  --color-accent-bright: #4db1ff;
 
-  --color-chalk: #e8e6e1;
-  --color-chalk-dim: #9a9890;
+  /* Text */
+  --color-chalk: #eef0f4;
+  --color-chalk-dim: #8892a4;
 
-  --color-win: #34d399;
-  --color-lose: #f87171;
+  /* Semantic */
+  --color-win: #00c853;
+  --color-lose: #ff4757;
+
+  /* Highlight / secondary accent */
+  --color-highlight: #ff8c00;
 }
 
 * {
@@ -39,6 +46,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent iOS zoom on input focus — minimum 16px font-size */
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -51,16 +67,6 @@ body {
 }
 
 ::selection {
-  background: var(--color-gold);
-  color: var(--color-ink);
-}
-
-#root::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background: var(--color-accent);
+  color: white;
 }

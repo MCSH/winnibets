@@ -4,10 +4,23 @@ import {
   verifyIntegrity,
   listBlocks,
   type BlockSummary,
-} from "../lib/api";
-import Card from "../components/Card";
-import HashDisplay from "../components/HashDisplay";
+} from "@/lib/api";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import HashDisplay from "@/components/HashDisplay";
 import { motion, AnimatePresence } from "motion/react";
+import {
+  Search,
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Check,
+  X,
+} from "lucide-react";
 
 interface BlockData {
   block_index: number;
@@ -52,11 +65,14 @@ export default function Explorer() {
       setTotal(res.total);
       setOffset(newOffset);
     } catch {
-      // silently fail — list section just stays empty
+      // silently fail
     } finally {
       setListLoading(false);
     }
   };
+
+  // Reverse blocks so most recent appear first
+  const displayBlocks = [...blocks].reverse();
 
   const handleLookup = async (e: FormEvent) => {
     e.preventDefault();
@@ -91,18 +107,20 @@ export default function Explorer() {
     }
   };
 
-  const typeColor = (type: string) => {
+  const typeBadgeVariant = (
+    type: string,
+  ): "muted" | "gold" | "green" | "red" | "default" => {
     switch (type) {
       case "genesis":
-        return "bg-chalk/10 text-chalk-dim border-chalk/20";
+        return "muted";
       case "hidden_message":
-        return "bg-gold/10 text-gold border-gold/25";
+        return "gold";
       case "open_message":
-        return "bg-win/10 text-win border-win/25";
+        return "green";
       case "bet":
-        return "bg-lose/10 text-lose border-lose/25";
+        return "red";
       default:
-        return "bg-ink-lighter text-chalk-dim border-ink-border";
+        return "default";
     }
   };
 
@@ -131,142 +149,169 @@ export default function Explorer() {
 
       {/* Block list */}
       <Card>
-        <div className="flex items-center justify-between mb-4">
-          <label className="text-xs font-medium text-chalk-dim uppercase tracking-wider">
-            Chain
-          </label>
-          <span className="text-xs text-ink-muted font-mono">
-            {total} block{total !== 1 && "s"}
-          </span>
-        </div>
-
-        {listLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : blocks.length === 0 ? (
-          <p className="text-sm text-ink-muted py-4 text-center">
-            No blocks found.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {blocks.map((b) => (
-              <div key={b.block_index}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedBlock(
-                      expandedBlock === b.block_index ? null : b.block_index,
-                    )
-                  }
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded bg-ink hover:bg-ink-lighter border border-ink-border/50 hover:border-gold/30 transition-colors cursor-pointer text-left"
-                >
-                  <span className="font-mono text-xs text-chalk-dim w-8 shrink-0">
-                    #{b.block_index}
-                  </span>
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${typeColor(b.record_type)}`}
-                  >
-                    {typeLabel(b.record_type)}
-                  </span>
-                  <span className="flex-1 font-mono text-[11px] text-ink-muted truncate">
-                    {b.block_hash}
-                  </span>
-                  <span className="text-[10px] text-ink-muted whitespace-nowrap">
-                    {b.timestamp === 0
-                      ? "origin"
-                      : new Date(b.timestamp * 1000).toLocaleDateString()}
-                  </span>
-                </button>
-
-                <AnimatePresence>
-                  {expandedBlock === b.block_index && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="ml-11 mt-1 mb-2 p-3 rounded bg-ink-light border border-ink-border/30 space-y-3">
-                        {Object.entries(b.data).map(([key, value]) => {
-                          const strVal = String(value);
-                          const isHash = /^[a-f0-9]{64}$/.test(strVal);
-                          if (isHash) {
-                            return (
-                              <HashDisplay
-                                key={key}
-                                label={key.replace(/_/g, " ")}
-                                hash={strVal}
-                              />
-                            );
-                          }
-                          return (
-                            <div key={key} className="space-y-0.5">
-                              <span className="text-[10px] font-medium text-ink-muted uppercase tracking-wider">
-                                {key.replace(/_/g, " ")}
-                              </span>
-                              <p className="text-sm text-chalk">{strVal}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {total > PAGE_SIZE && (
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-ink-border/30">
-            <button
-              onClick={() => loadBlocks(Math.max(0, offset - PAGE_SIZE))}
-              disabled={offset === 0 || listLoading}
-              className="text-xs font-medium text-chalk-dim hover:text-gold disabled:opacity-30 disabled:hover:text-chalk-dim transition-colors cursor-pointer disabled:cursor-default"
-            >
-              Previous
-            </button>
-            <span className="text-[10px] text-ink-muted font-mono">
-              {offset + 1}&ndash;{Math.min(offset + PAGE_SIZE, total)} of{" "}
-              {total}
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <Label className="text-xs">Chain</Label>
+            <span className="text-xs text-ink-muted font-mono">
+              {total} block{total !== 1 && "s"}
             </span>
-            <button
-              onClick={() => loadBlocks(offset + PAGE_SIZE)}
-              disabled={offset + PAGE_SIZE >= total || listLoading}
-              className="text-xs font-medium text-chalk-dim hover:text-gold disabled:opacity-30 disabled:hover:text-chalk-dim transition-colors cursor-pointer disabled:cursor-default"
-            >
-              Next
-            </button>
           </div>
-        )}
+
+          {listLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : displayBlocks.length === 0 ? (
+            <p className="text-sm text-ink-muted py-4 text-center">
+              No blocks found.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {displayBlocks.map((b, i) => (
+                <motion.div
+                  key={b.block_index}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02, duration: 0.2 }}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedBlock(
+                        expandedBlock === b.block_index ? null : b.block_index,
+                      )
+                    }
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-ink hover:bg-ink-lighter border border-ink-border/50 hover:border-accent/30 transition-all duration-200 cursor-pointer text-left group"
+                  >
+                    <span className="font-mono text-xs text-chalk-dim w-8 shrink-0">
+                      #{b.block_index}
+                    </span>
+                    <Badge variant={typeBadgeVariant(b.record_type)}>
+                      {typeLabel(b.record_type)}
+                    </Badge>
+                    <span className="flex-1 font-mono text-[11px] text-ink-muted truncate">
+                      {b.block_hash}
+                    </span>
+                    <span className="text-[10px] text-ink-muted whitespace-nowrap hidden sm:block">
+                      {b.timestamp === 0
+                        ? "origin"
+                        : new Date(b.timestamp * 1000).toLocaleDateString()}
+                    </span>
+                    <ChevronDown
+                      className={`size-3.5 text-ink-muted transition-transform duration-200 ${
+                        expandedBlock === b.block_index ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {expandedBlock === b.block_index && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="ml-11 mt-1 mb-2 p-4 rounded-lg bg-ink-light border border-ink-border/30 space-y-3">
+                          {Object.entries(b.data).map(([key, value]) => {
+                            const strVal = String(value);
+                            const isHash = /^[a-f0-9]{64}$/.test(strVal);
+                            if (isHash) {
+                              return (
+                                <HashDisplay
+                                  key={key}
+                                  label={key.replace(/_/g, " ")}
+                                  hash={strVal}
+                                />
+                              );
+                            }
+                            return (
+                              <div key={key} className="space-y-0.5">
+                                <span className="text-[10px] font-medium text-ink-muted uppercase tracking-wider">
+                                  {key.replace(/_/g, " ")}
+                                </span>
+                                <p className="text-sm text-chalk">{strVal}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {total > PAGE_SIZE && (
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-ink-border/30">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => loadBlocks(Math.max(0, offset - PAGE_SIZE))}
+                disabled={offset === 0 || listLoading}
+              >
+                <ChevronLeft className="size-3.5" />
+                Previous
+              </Button>
+              <span className="text-[10px] text-ink-muted font-mono">
+                {offset + 1}&ndash;{Math.min(offset + PAGE_SIZE, total)} of{" "}
+                {total}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => loadBlocks(offset + PAGE_SIZE)}
+                disabled={offset + PAGE_SIZE >= total || listLoading}
+              >
+                Next
+                <ChevronRight className="size-3.5" />
+              </Button>
+            </div>
+          )}
+        </CardContent>
       </Card>
 
       {/* Lookup */}
       <Card>
-        <form onSubmit={handleLookup} className="space-y-4">
-          <label className="block text-xs font-medium text-chalk-dim mb-2 uppercase tracking-wider">
-            Block Hash
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={hash}
-              onChange={(e) => setHash(e.target.value)}
-              placeholder="64-character SHA-256 hex digest"
-              className="flex-1 bg-ink border border-ink-border rounded px-4 py-2.5 text-chalk font-mono text-xs placeholder:text-ink-muted focus:outline-none focus:border-gold/60 transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-gold hover:bg-gold-bright text-ink font-semibold px-5 py-2.5 rounded transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
-            >
-              {loading ? "..." : "Lookup"}
-            </button>
-          </div>
-          {error && <p className="text-lose text-xs font-medium">{error}</p>}
-        </form>
+        <CardContent>
+          <form onSubmit={handleLookup} className="space-y-4">
+            <Label>Block Hash Lookup</Label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={hash}
+                onChange={(e) => setHash(e.target.value)}
+                placeholder="64-character SHA-256 hex digest"
+                className="font-mono text-xs"
+              />
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  "..."
+                ) : (
+                  <>
+                    <Search className="size-3.5" />
+                    Lookup
+                  </>
+                )}
+              </Button>
+            </div>
+            <AnimatePresence>
+              {error && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-lose text-xs font-medium"
+                >
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </form>
+        </CardContent>
       </Card>
 
       {/* Block result */}
@@ -277,45 +322,44 @@ export default function Explorer() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <Card className="space-y-4 border-gold/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-gold/15 text-gold border border-gold/30">
-                    {block.record_type}
-                  </span>
-                  <span className="text-xs text-chalk-dim">
-                    Block #{block.block_index}
+            <Card className="border-accent/30">
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="gold">{block.record_type}</Badge>
+                    <span className="text-xs text-chalk-dim">
+                      Block #{block.block_index}
+                    </span>
+                  </div>
+                  <span className="text-xs text-ink-muted">
+                    {new Date(block.timestamp * 1000).toLocaleString()}
                   </span>
                 </div>
-                <span className="text-xs text-ink-muted">
-                  {new Date(block.timestamp * 1000).toLocaleString()}
-                </span>
-              </div>
 
-              {/* Data fields */}
-              <div className="space-y-3">
-                {Object.entries(block.data).map(([key, value]) => {
-                  const strVal = String(value);
-                  const isHash = /^[a-f0-9]{64}$/.test(strVal);
-                  if (isHash) {
+                <div className="space-y-3">
+                  {Object.entries(block.data).map(([key, value]) => {
+                    const strVal = String(value);
+                    const isHash = /^[a-f0-9]{64}$/.test(strVal);
+                    if (isHash) {
+                      return (
+                        <HashDisplay
+                          key={key}
+                          label={key.replace(/_/g, " ")}
+                          hash={strVal}
+                        />
+                      );
+                    }
                     return (
-                      <HashDisplay
-                        key={key}
-                        label={key.replace(/_/g, " ")}
-                        hash={strVal}
-                      />
+                      <div key={key} className="space-y-1">
+                        <span className="text-xs font-medium text-ink-muted uppercase tracking-wider">
+                          {key.replace(/_/g, " ")}
+                        </span>
+                        <p className="text-sm text-chalk">{strVal}</p>
+                      </div>
                     );
-                  }
-                  return (
-                    <div key={key} className="space-y-1">
-                      <span className="text-xs font-medium text-ink-muted uppercase tracking-wider">
-                        {key.replace(/_/g, " ")}
-                      </span>
-                      <p className="text-sm text-chalk">{strVal}</p>
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
         )}
@@ -332,13 +376,14 @@ export default function Explorer() {
               Verify the hash linkage of every block in the chain
             </p>
           </div>
-          <button
+          <Button
+            variant="outline"
             onClick={handleIntegrity}
             disabled={intLoading}
-            className="bg-ink-lighter border border-ink-border hover:border-gold/40 text-chalk-dim hover:text-gold font-medium px-5 py-2.5 rounded transition-colors disabled:opacity-50 cursor-pointer"
           >
+            <ShieldCheck className="size-3.5" />
             {intLoading ? "Verifying..." : "Run Check"}
-          </button>
+          </Button>
         </div>
 
         <AnimatePresence>
@@ -349,25 +394,46 @@ export default function Explorer() {
               exit={{ opacity: 0 }}
             >
               <Card
-                className={integrity.valid ? "border-win/30" : "border-lose/30"}
+                className={
+                  integrity.valid ? "border-win/30" : "border-lose/30"
+                }
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-3 h-3 rounded-full ${integrity.valid ? "bg-win" : "bg-lose"}`}
-                  />
-                  <div>
-                    <p
-                      className={`font-semibold text-sm ${integrity.valid ? "text-win" : "text-lose"}`}
+                <CardContent>
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 15,
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        integrity.valid ? "bg-win/15" : "bg-lose/15"
+                      }`}
                     >
-                      {integrity.valid ? "Chain Valid" : "Chain Invalid"}
-                    </p>
-                    <p className="text-xs text-chalk-dim">
-                      {integrity.valid
-                        ? `${integrity.blocks} blocks verified`
-                        : `First invalid block at index ${integrity.first_invalid_block}`}
-                    </p>
+                      {integrity.valid ? (
+                        <Check className="size-4 text-win" />
+                      ) : (
+                        <X className="size-4 text-lose" />
+                      )}
+                    </motion.div>
+                    <div>
+                      <p
+                        className={`font-semibold text-sm ${
+                          integrity.valid ? "text-win" : "text-lose"
+                        }`}
+                      >
+                        {integrity.valid ? "Chain Valid" : "Chain Invalid"}
+                      </p>
+                      <p className="text-xs text-chalk-dim">
+                        {integrity.valid
+                          ? `${integrity.blocks} blocks verified`
+                          : `First invalid block at index ${integrity.first_invalid_block}`}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </CardContent>
               </Card>
             </motion.div>
           )}
