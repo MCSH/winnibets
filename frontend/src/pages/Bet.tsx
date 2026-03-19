@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createBet } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { createBet, listContacts, type Contact } from "@/lib/api";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,15 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Send, Check, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Send,
+  Check,
+  Eye,
+  EyeOff,
+  UserCircle,
+} from "lucide-react";
 
 interface BetResult {
   bet_id: number;
@@ -43,6 +51,13 @@ export default function Bet() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<BetResult | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  useEffect(() => {
+    listContacts()
+      .then(setContacts)
+      .catch(() => {});
+  }, []);
 
   const canAdvance = () => {
     if (step === 0) return terms.trim().length > 0;
@@ -114,6 +129,7 @@ export default function Bet() {
     setStep(0);
     setTerms("");
     setCounterparty("");
+    setSelectedContact(null);
     setVisibility("visible");
     setResult(null);
     setError("");
@@ -252,48 +268,119 @@ export default function Bet() {
               {/* Step 1: Counterparty */}
               {step === 1 && (
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Contact Method</Label>
-                    <ToggleGroup
-                      value={counterpartyMode}
-                      onValueChange={(m) => {
-                        setCounterpartyMode(m);
-                        setCounterparty("");
-                        setError("");
-                      }}
-                      options={[
-                        { value: "phone", label: "Phone" },
-                        { value: "email", label: "Email" },
-                      ]}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>
-                      {counterpartyMode === "phone"
-                        ? "Phone Number"
-                        : "Email Address"}
-                    </Label>
-                    {counterpartyMode === "phone" ? (
-                      <PhoneField
-                        value={counterparty}
-                        onChange={setCounterparty}
-                        autoFocus
-                      />
-                    ) : (
-                      <Input
-                        type="email"
-                        value={counterparty}
-                        onChange={(e) => setCounterparty(e.target.value)}
-                        placeholder="them@example.com"
-                        autoFocus
-                      />
-                    )}
-                    <p className="text-[11px] text-ink-muted">
-                      They&apos;ll receive{" "}
-                      {counterpartyMode === "phone" ? "an SMS" : "an email"}{" "}
-                      with a link to accept or decline.
-                    </p>
-                  </div>
+                  {/* Contact picker */}
+                  {contacts.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Choose a contact</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {contacts.map((c) => {
+                          const isSelected = selectedContact?.id === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedContact(null);
+                                  setCounterparty("");
+                                  setCounterpartyMode("phone");
+                                } else {
+                                  setSelectedContact(c);
+                                  setCounterparty(c.identifier);
+                                  setCounterpartyMode(
+                                    c.identifier_type as CounterpartyMode,
+                                  );
+                                  setError("");
+                                }
+                              }}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                isSelected
+                                  ? "bg-accent/15 border-accent/50 text-accent"
+                                  : "bg-ink border-ink-border/60 text-chalk-dim hover:border-ink-muted hover:text-chalk"
+                              }`}
+                            >
+                              <UserCircle className="size-3.5" />
+                              {c.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Divider when contacts exist */}
+                  {contacts.length > 0 && !selectedContact && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-ink-border/30" />
+                      <span className="text-[10px] text-ink-muted uppercase tracking-wider">
+                        or enter manually
+                      </span>
+                      <div className="flex-1 h-px bg-ink-border/30" />
+                    </div>
+                  )}
+
+                  {/* Manual entry (hidden when contact is selected) */}
+                  {!selectedContact && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Contact Method</Label>
+                        <ToggleGroup
+                          value={counterpartyMode}
+                          onValueChange={(m) => {
+                            setCounterpartyMode(m);
+                            setCounterparty("");
+                            setError("");
+                          }}
+                          options={[
+                            { value: "phone", label: "Phone" },
+                            { value: "email", label: "Email" },
+                          ]}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>
+                          {counterpartyMode === "phone"
+                            ? "Phone Number"
+                            : "Email Address"}
+                        </Label>
+                        {counterpartyMode === "phone" ? (
+                          <PhoneField
+                            value={counterparty}
+                            onChange={setCounterparty}
+                            autoFocus
+                          />
+                        ) : (
+                          <Input
+                            type="email"
+                            value={counterparty}
+                            onChange={(e) => setCounterparty(e.target.value)}
+                            placeholder="them@example.com"
+                            autoFocus
+                          />
+                        )}
+                        <p className="text-[11px] text-ink-muted">
+                          They&apos;ll receive{" "}
+                          {counterpartyMode === "phone" ? "an SMS" : "an email"}{" "}
+                          with a link to accept or decline.
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Selected contact info */}
+                  {selectedContact && (
+                    <div className="bg-ink/40 border border-accent/20 rounded-lg p-3 flex items-center gap-3">
+                      <UserCircle className="size-5 text-accent shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-chalk">
+                          {selectedContact.name}
+                        </p>
+                        <p className="font-mono text-[11px] text-ink-muted truncate">
+                          {selectedContact.identifier}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -343,7 +430,9 @@ export default function Bet() {
                     <p className="text-xs text-ink-muted">
                       Sending to{" "}
                       <span className="font-mono text-chalk-dim">
-                        {counterparty}
+                        {selectedContact
+                          ? `${selectedContact.name} (${selectedContact.identifier})`
+                          : counterparty}
                       </span>{" "}
                       &middot; {visibility} terms · expires in 72h
                     </p>
