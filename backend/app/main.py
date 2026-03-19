@@ -54,7 +54,9 @@ def _load_chain() -> Blockchain:
                 if b.hash != row.hash:
                     logger.error(
                         "Hash mismatch for block %d: computed=%s stored=%s",
-                        row.index, b.hash, row.hash,
+                        row.index,
+                        b.hash,
+                        row.hash,
                     )
                 blocks.append(b)
             chain.load_persisted_blocks(blocks)
@@ -107,8 +109,10 @@ from app.auth import router as auth_router  # noqa: E402
 from app.messages import router as messages_router  # noqa: E402
 from app.blocks import router as blocks_router  # noqa: E402
 from app.bets import router as bets_router  # noqa: E402
+from app.activity import router as activity_router  # noqa: E402
 
 app.include_router(auth_router)
 app.include_router(messages_router)
 app.include_router(blocks_router)
 app.include_router(bets_router)
+app.include_router(activity_router)

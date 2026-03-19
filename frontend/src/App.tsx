@@ -9,6 +9,7 @@ import Bet from "@/pages/Bet";
 import BetRespond from "@/pages/BetRespond";
 import PendingBets from "@/pages/PendingBets";
 import Explorer from "@/pages/Explorer";
+import MyActivity from "@/pages/MyActivity";
 import type { ReactNode } from "react";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -66,6 +67,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <Bet />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/activity"
+          element={
+            <RequireAuth>
+              <MyActivity />
             </RequireAuth>
           }
         />

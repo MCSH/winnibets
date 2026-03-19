@@ -123,6 +123,38 @@ export function respondToBet(betId: number, accept: boolean) {
   });
 }
 
+// --- Activity ---
+
+export interface ActivityBlock {
+  block_index: number;
+  block_hash: string;
+  timestamp: number;
+  record_type: string;
+  role: string;
+  data: Record<string, unknown>;
+}
+
+export interface ActivityBet {
+  bet_id: number;
+  bet_terms: string;
+  visibility: string;
+  status: string;
+  role: string;
+  counterparty_identifier?: string;
+  counterparty_identifier_type?: string;
+  initiator_identifier?: string;
+  initiator_identifier_type?: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export function getMyActivity() {
+  return request<{
+    blocks: ActivityBlock[];
+    bets: ActivityBet[];
+  }>("/activity/my");
+}
+
 // --- Blocks ---
 
 export function lookupBlock(blockHash: string) {

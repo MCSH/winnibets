@@ -173,3 +173,32 @@ class IntegrityResponse(BaseModel):
     first_invalid_block: Optional[int] = None
 
 
+# --- Activity schemas ---
+
+
+class ActivityBlock(BaseModel):
+    block_index: int
+    block_hash: str
+    timestamp: float
+    record_type: str
+    role: str  # "author", "initiator", "counterparty"
+    data: dict
+
+
+class ActivityBet(BaseModel):
+    bet_id: int
+    bet_terms: str
+    visibility: str
+    status: str  # "pending", "accepted", "declined", "expired"
+    role: str  # "initiator" or "counterparty"
+    counterparty_identifier: Optional[str] = None
+    counterparty_identifier_type: Optional[str] = None
+    initiator_identifier: Optional[str] = None
+    initiator_identifier_type: Optional[str] = None
+    expires_at: str
+    created_at: str
+
+
+class ActivityResponse(BaseModel):
+    blocks: list[ActivityBlock]
+    bets: list[ActivityBet]

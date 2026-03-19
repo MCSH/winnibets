@@ -10,6 +10,7 @@ const AUTH_NAV = [
   { to: "/message", label: "Message" },
   { to: "/bet", label: "Place Bet" },
   { to: "/pending", label: "Pending" },
+  { to: "/activity", label: "My Activity" },
   { to: "/explorer", label: "Ledger" },
 ] as const;
 
@@ -22,8 +23,7 @@ export default function Shell() {
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const showFabs =
-    user && !["/message", "/bet"].includes(location.pathname);
+  const showFabs = user && !["/message", "/bet"].includes(location.pathname);
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -95,7 +95,11 @@ export default function Shell() {
               className="sm:hidden text-chalk-dim hover:text-chalk transition-colors cursor-pointer"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
-              {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+              {mobileOpen ? (
+                <X className="size-5" />
+              ) : (
+                <Menu className="size-5" />
+              )}
             </button>
           </div>
         </div>
