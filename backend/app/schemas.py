@@ -202,3 +202,57 @@ class ActivityBet(BaseModel):
 class ActivityResponse(BaseModel):
     blocks: list[ActivityBlock]
     bets: list[ActivityBet]
+
+
+# --- Contact schemas ---
+
+
+class ContactCreate(BaseModel):
+    identifier: str
+    identifier_type: IdentifierType
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Name must not be empty")
+        return v
+
+    @field_validator("identifier")
+    @classmethod
+    def identifier_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Identifier must not be empty")
+        return v.strip()
+
+
+class ContactUpdate(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Name must not be empty")
+        return v
+
+
+class ContactResponse(BaseModel):
+    id: int
+    identifier: str
+    identifier_type: str
+    name: str
+
+
+class ContactsResolveRequest(BaseModel):
+    identifiers: list[str]
+
+
+class ContactsResolveResponse(BaseModel):
+    names: dict[str, str]
+
+
+class ContactSuggestion(BaseModel):
+    identifier: str
+    identifier_type: str

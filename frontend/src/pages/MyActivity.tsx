@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMyActivity, type ActivityBlock, type ActivityBet } from "@/lib/api";
+import { useContacts } from "@/lib/contacts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import HashDisplay from "@/components/HashDisplay";
@@ -98,16 +99,21 @@ export default function MyActivity() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
+  const { displayName, resolve } = useContacts();
 
   useEffect(() => {
     getMyActivity()
       .then((res) => {
         setBlocks(res.blocks);
         setBets(res.bets);
+        const ids = res.bets
+          .flatMap((b) => [b.counterparty_identifier, b.initiator_identifier])
+          .filter((id): id is string => !!id);
+        if (ids.length > 0) resolve(ids);
       })
       .catch((err) => setError((err as Error).message))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredBlocks =
     tab === "bets"
@@ -244,7 +250,7 @@ export default function MyActivity() {
                           <span>
                             vs{" "}
                             <span className="font-mono text-chalk">
-                              {bet.counterparty_identifier}
+                              {displayName(bet.counterparty_identifier)}
                             </span>
                           </span>
                         )}
@@ -253,7 +259,7 @@ export default function MyActivity() {
                           <span>
                             From{" "}
                             <span className="font-mono text-chalk">
-                              {bet.initiator_identifier}
+                              {displayName(bet.initiator_identifier)}
                             </span>
                           </span>
                         )}

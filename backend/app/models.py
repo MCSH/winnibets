@@ -6,11 +6,12 @@ from sqlalchemy import (
     Column,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     String,
     Boolean,
     Text,
-    ForeignKey,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -75,7 +76,9 @@ class PendingBet(Base):
     # the block is committed).
     bet_terms = Column(Text, nullable=False)
     visibility = Column(String(10), nullable=False)  # "visible" or "hidden"
-    status = Column(String(20), default="pending", nullable=False)  # pending, accepted, declined, expired
+    status = Column(
+        String(20), default="pending", nullable=False
+    )  # pending, accepted, declined, expired
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(
         DateTime(timezone=True),
@@ -83,7 +86,9 @@ class PendingBet(Base):
         nullable=False,
     )
 
-    initiator = relationship("User", back_populates="pending_bets", foreign_keys=[initiator_id])
+    initiator = relationship(
+        "User", back_populates="pending_bets", foreign_keys=[initiator_id]
+    )
     counterparty = relationship("User", foreign_keys=[counterparty_user_id])
 
 
@@ -104,6 +109,29 @@ class ChainBlock(Base):
     data = Column(Text, nullable=False)  # JSON-serialized block data
     previous_hash = Column(String(64), nullable=False)
     hash = Column(String(64), unique=True, nullable=False, index=True)
+
+
+class Contact(Base):
+    """Private named contacts. Each user can assign friendly names to identifiers."""
+
+    __tablename__ = "contacts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    identifier = Column(String(255), nullable=False)
+    identifier_type = Column(String(10), nullable=False)
+    name = Column(String(255), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    owner = relationship("User", foreign_keys=[owner_id])
+
+    __table_args__ = (
+        UniqueConstraint("owner_id", "identifier", name="uq_contact_owner_identifier"),
+    )
 
 
 class SessionToken(Base):

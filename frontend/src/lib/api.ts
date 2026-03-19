@@ -155,6 +155,57 @@ export function getMyActivity() {
   }>("/activity/my");
 }
 
+// --- Contacts ---
+
+export interface Contact {
+  id: number;
+  identifier: string;
+  identifier_type: string;
+  name: string;
+}
+
+export function listContacts() {
+  return request<Contact[]>("/contacts");
+}
+
+export function createContact(params: {
+  identifier: string;
+  identifier_type: "phone" | "email";
+  name: string;
+}) {
+  return request<Contact>("/contacts", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export function updateContact(contactId: number, name: string) {
+  return request<Contact>(`/contacts/${contactId}`, {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteContact(contactId: number) {
+  return request<void>(`/contacts/${contactId}`, { method: "DELETE" });
+}
+
+export interface ContactSuggestion {
+  identifier: string;
+  identifier_type: string;
+}
+
+export function getContactSuggestions() {
+  return request<ContactSuggestion[]>("/contacts/suggestions");
+}
+
+export function resolveContacts(identifiers: string[]) {
+  return request<{ names: Record<string, string> }>("/contacts/resolve", {
+    method: "POST",
+    body: JSON.stringify({ identifiers }),
+  });
+}
+
 // --- Blocks ---
 
 export function lookupBlock(blockHash: string) {

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ContactsProvider } from "@/lib/contacts";
 import Shell from "@/components/Shell";
 import Login from "@/pages/Login";
 import Verify from "@/pages/Verify";
@@ -10,6 +11,7 @@ import BetRespond from "@/pages/BetRespond";
 import PendingBets from "@/pages/PendingBets";
 import Explorer from "@/pages/Explorer";
 import MyActivity from "@/pages/MyActivity";
+import Contacts from "@/pages/Contacts";
 import type { ReactNode } from "react";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -79,6 +81,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/contacts"
+          element={
+            <RequireAuth>
+              <Contacts />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/pending"
           element={
             <RequireAuth>
@@ -106,7 +116,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ContactsProvider>
+          <AppRoutes />
+        </ContactsProvider>
       </AuthProvider>
     </BrowserRouter>
   );

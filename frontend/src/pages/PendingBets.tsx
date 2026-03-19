@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listPendingBets, respondToBet, type PendingBet } from "@/lib/api";
+import { useContacts } from "@/lib/contacts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,13 +22,18 @@ export default function PendingBets() {
   const [error, setError] = useState("");
   const [responding, setResponding] = useState<number | null>(null);
   const [results, setResults] = useState<Record<number, BetResult>>({});
+  const { displayName, resolve } = useContacts();
 
   useEffect(() => {
     listPendingBets()
-      .then(setBets)
+      .then((data) => {
+        setBets(data);
+        const ids = data.map((b) => b.initiator_identifier).filter(Boolean);
+        if (ids.length > 0) resolve(ids);
+      })
       .catch((err) => setError((err as Error).message))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRespond = async (betId: number, accept: boolean) => {
     setResponding(betId);
@@ -107,9 +113,7 @@ export default function PendingBets() {
           >
             <Card
               className={
-                r.status === "accepted"
-                  ? "border-win/30"
-                  : "border-lose/30"
+                r.status === "accepted" ? "border-win/30" : "border-lose/30"
               }
             >
               <CardContent className="space-y-3">
@@ -119,9 +123,7 @@ export default function PendingBets() {
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      r.status === "accepted"
-                        ? "bg-win/15"
-                        : "bg-lose/15"
+                      r.status === "accepted" ? "bg-win/15" : "bg-lose/15"
                     }`}
                   >
                     {r.status === "accepted" ? (
@@ -204,7 +206,7 @@ export default function PendingBets() {
                   <span>
                     From{" "}
                     <span className="font-mono text-chalk">
-                      {bet.initiator_identifier}
+                      {displayName(bet.initiator_identifier)}
                     </span>
                   </span>
                   <span>Created {formatTime(bet.created_at)}</span>

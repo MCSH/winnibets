@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ToggleGroupProps<T extends string> {
   value: T;
   onValueChange: (value: T) => void;
-  options: { value: T; label: string; description?: string }[];
+  options: { value: T; label: ReactNode; description?: string }[];
   className?: string;
 }
 

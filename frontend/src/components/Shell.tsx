@@ -11,6 +11,7 @@ const AUTH_NAV = [
   { to: "/bet", label: "Place Bet" },
   { to: "/pending", label: "Pending" },
   { to: "/activity", label: "My Activity" },
+  { to: "/contacts", label: "Contacts" },
   { to: "/explorer", label: "Ledger" },
 ] as const;
 
