@@ -134,6 +134,36 @@ class Contact(Base):
     )
 
 
+class BetResolution(Base):
+    """Proposed and accepted bet resolutions.
+
+    One party proposes a result (winner + optional note). The other party
+    accepts or rejects. If accepted, a new block is committed to the chain.
+    """
+
+    __tablename__ = "bet_resolutions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bet_id = Column(Integer, ForeignKey("pending_bets.id"), nullable=False)
+    proposed_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    winner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    note = Column(Text, nullable=True)
+    status = Column(
+        String(20), default="pending", nullable=False
+    )  # pending, accepted, rejected
+    block_hash = Column(String(64), nullable=True)  # set when accepted and committed
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    bet = relationship("PendingBet", foreign_keys=[bet_id])
+    proposed_by = relationship("User", foreign_keys=[proposed_by_id])
+    winner = relationship("User", foreign_keys=[winner_id])
+
+
 class SessionToken(Base):
     """Active user sessions created after magic link verification."""
 

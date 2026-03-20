@@ -123,6 +123,34 @@ export function respondToBet(betId: number, accept: boolean) {
   });
 }
 
+// --- Bet Resolution ---
+
+export function proposeResolution(
+  betId: number,
+  winner: "initiator" | "counterparty",
+  note?: string,
+) {
+  return request<{ resolution_id: number; message: string }>(
+    `/bets/${betId}/resolve`,
+    {
+      method: "POST",
+      body: JSON.stringify({ winner, note: note || undefined }),
+    },
+  );
+}
+
+export function respondToResolution(betId: number, accept: boolean) {
+  return request<{
+    status: "accepted" | "rejected";
+    block_hash?: string;
+    block_index?: number;
+    timestamp?: number;
+  }>(`/bets/${betId}/resolve/respond`, {
+    method: "POST",
+    body: JSON.stringify({ accept }),
+  });
+}
+
 // --- Activity ---
 
 export interface ActivityBlock {
@@ -132,6 +160,18 @@ export interface ActivityBlock {
   record_type: string;
   role: string;
   data: Record<string, unknown>;
+}
+
+export interface BetResolution {
+  resolution_id: number;
+  bet_id: number;
+  proposed_by: "initiator" | "counterparty";
+  winner: "initiator" | "counterparty";
+  note?: string;
+  status: "pending" | "accepted" | "rejected";
+  block_hash?: string;
+  resolved_at?: string;
+  created_at: string;
 }
 
 export interface ActivityBet {
@@ -146,6 +186,7 @@ export interface ActivityBet {
   initiator_identifier_type?: string;
   expires_at: string;
   created_at: string;
+  resolution?: BetResolution;
 }
 
 export function getMyActivity() {

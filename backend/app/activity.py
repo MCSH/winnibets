@@ -8,8 +8,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.hashing import hash_identity
-from app.models import PendingBet, User
-from app.schemas import ActivityResponse, ActivityBlock, ActivityBet
+from app.models import BetResolution, PendingBet, User
+from app.schemas import (
+    ActivityBet,
+    ActivityBlock,
+    ActivityResponse,
+    BetResolutionSummary,
+)
 
 router = APIRouter(prefix="/activity", tags=["activity"])
 
@@ -38,7 +43,7 @@ def my_activity(
         if record_type in ("hidden_message", "open_message"):
             if data.get("identity_hash") == identity_hash:
                 is_mine = True
-        elif record_type == "bet":
+        elif record_type in ("bet", "bet_resolution"):
             if data.get("initiator_identity_hash") == identity_hash:
                 is_mine = True
                 role = "initiator"
@@ -92,6 +97,39 @@ def my_activity(
             if expires < now:
                 status = "expired"
 
+        # Look up the latest resolution for this bet
+        resolution_summary = None
+        resolution = (
+            db.query(BetResolution)
+            .filter(BetResolution.bet_id == bet.id)
+            .order_by(BetResolution.created_at.desc())
+            .first()
+        )
+        if resolution:
+            proposed_by_role = (
+                "initiator"
+                if resolution.proposed_by_id == bet.initiator_id
+                else "counterparty"
+            )
+            winner_role = (
+                "initiator"
+                if resolution.winner_id == bet.initiator_id
+                else "counterparty"
+            )
+            resolution_summary = BetResolutionSummary(
+                resolution_id=resolution.id,
+                bet_id=bet.id,
+                proposed_by=proposed_by_role,
+                winner=winner_role,
+                note=resolution.note,
+                status=resolution.status,
+                block_hash=resolution.block_hash,
+                resolved_at=resolution.resolved_at.isoformat()
+                if resolution.resolved_at
+                else None,
+                created_at=resolution.created_at.isoformat(),
+            )
+
         activity_bets.append(
             ActivityBet(
                 bet_id=bet.id,
@@ -113,6 +151,7 @@ def my_activity(
                 else None,
                 expires_at=bet.expires_at.isoformat(),
                 created_at=bet.created_at.isoformat(),
+                resolution=resolution_summary,
             )
         )
 

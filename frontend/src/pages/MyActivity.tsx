@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
-import { getMyActivity, type ActivityBlock, type ActivityBet } from "@/lib/api";
+import {
+  getMyActivity,
+  proposeResolution,
+  respondToResolution,
+  type ActivityBlock,
+  type ActivityBet,
+} from "@/lib/api";
 import { useContacts } from "@/lib/contacts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import HashDisplay from "@/components/HashDisplay";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -14,6 +21,9 @@ import {
   Inbox,
   Send,
   MessageSquare,
+  Trophy,
+  Check,
+  X,
 } from "lucide-react";
 
 type Tab = "all" | "messages" | "bets";
@@ -85,11 +95,241 @@ function friendlyDataLabel(key: string): string {
     message_hash: "Message proof",
     initiator_identity_hash: "Challenger",
     counterparty_identity_hash: "Opponent",
+    winner_identity_hash: "Winner proof",
     bet_terms_hash: "Terms proof",
     bet_terms: "Terms",
     visibility: "Visibility",
+    winner_side: "Winner",
+    note: "Note",
   };
   return labels[key] ?? key.replace(/_/g, " ");
+}
+
+function ResolutionPanel({
+  bet,
+  onUpdate,
+}: {
+  bet: ActivityBet;
+  onUpdate: () => void;
+}) {
+  const [showPropose, setShowPropose] = useState(false);
+  const [winner, setWinner] = useState<"initiator" | "counterparty">(
+    bet.role as "initiator" | "counterparty",
+  );
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const resolution = bet.resolution;
+
+  // Already resolved — show result
+  if (resolution?.status === "accepted") {
+    const winnerLabel =
+      resolution.winner === bet.role ? "You won!" : "You lost";
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-ink border border-ink-border/40 space-y-2">
+        <div className="flex items-center gap-2">
+          <Trophy className="size-4 text-win" />
+          <span className="text-sm font-semibold text-win">{winnerLabel}</span>
+          {resolution.block_hash && (
+            <span className="text-[10px] font-mono text-ink-muted truncate">
+              {resolution.block_hash.slice(0, 12)}...
+            </span>
+          )}
+        </div>
+        {resolution.note && (
+          <p className="text-xs text-chalk-dim">{resolution.note}</p>
+        )}
+      </div>
+    );
+  }
+
+  // Pending resolution proposed by the other party — show accept/reject
+  if (resolution?.status === "pending" && resolution.proposed_by !== bet.role) {
+    const winnerLabel =
+      resolution.winner === bet.role ? "You" : "Your opponent";
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-ink border border-highlight/30 space-y-2">
+        <div className="flex items-center gap-2">
+          <Trophy className="size-4 text-highlight" />
+          <span className="text-xs font-medium text-highlight">
+            Resolution proposed
+          </span>
+        </div>
+        <p className="text-sm text-chalk">
+          Proposed winner: <span className="font-semibold">{winnerLabel}</span>
+        </p>
+        {resolution.note && (
+          <p className="text-xs text-chalk-dim">{resolution.note}</p>
+        )}
+        {error && <p className="text-xs text-lose">{error}</p>}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="success"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              setError("");
+              try {
+                await respondToResolution(bet.bet_id, true);
+                onUpdate();
+              } catch (e) {
+                setError((e as Error).message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            <Check className="size-3 mr-1" />
+            Accept
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              setError("");
+              try {
+                await respondToResolution(bet.bet_id, false);
+                onUpdate();
+              } catch (e) {
+                setError((e as Error).message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            <X className="size-3 mr-1" />
+            Reject
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Pending resolution proposed by me — show waiting state
+  if (resolution?.status === "pending" && resolution.proposed_by === bet.role) {
+    const winnerLabel =
+      resolution.winner === bet.role ? "You" : "Your opponent";
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-ink border border-ink-border/40 space-y-1">
+        <div className="flex items-center gap-2">
+          <Clock className="size-4 text-highlight" />
+          <span className="text-xs font-medium text-highlight">
+            Awaiting response
+          </span>
+        </div>
+        <p className="text-xs text-chalk-dim">
+          You proposed{" "}
+          <span className="font-medium text-chalk">{winnerLabel}</span> as
+          winner. Waiting for the other party.
+        </p>
+        {resolution.note && (
+          <p className="text-xs text-chalk-dim italic">"{resolution.note}"</p>
+        )}
+      </div>
+    );
+  }
+
+  // Rejected resolution — can propose again
+  if (resolution?.status === "rejected") {
+    // fall through to propose UI below
+  }
+
+  // No resolution or rejected — show propose button/form
+  if (!showPropose) {
+    return (
+      <div className="mt-3">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowPropose(true)}
+        >
+          <Trophy className="size-3 mr-1" />
+          {resolution?.status === "rejected"
+            ? "Propose new result"
+            : "Record result"}
+        </Button>
+        {resolution?.status === "rejected" && (
+          <p className="text-[10px] text-ink-muted mt-1">
+            Previous proposal was rejected
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 p-3 rounded-lg bg-ink border border-ink-border/40 space-y-3">
+      <p className="text-xs font-medium text-chalk">Propose a result</p>
+      <div className="flex gap-1 p-1 rounded-lg bg-ink-light border border-ink-border/50">
+        <button
+          type="button"
+          onClick={() => setWinner("initiator")}
+          className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+            winner === "initiator"
+              ? "bg-win text-ink"
+              : "text-chalk-dim hover:text-chalk"
+          }`}
+        >
+          {bet.role === "initiator" ? "I won" : "They won"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setWinner("counterparty")}
+          className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+            winner === "counterparty"
+              ? "bg-win text-ink"
+              : "text-chalk-dim hover:text-chalk"
+          }`}
+        >
+          {bet.role === "counterparty" ? "I won" : "They won"}
+        </button>
+      </div>
+      <input
+        type="text"
+        placeholder="Note (optional)"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="w-full bg-ink-light border border-ink-border/50 rounded-lg px-3 py-2 text-xs text-chalk placeholder:text-ink-muted focus:outline-none focus:border-accent/50"
+      />
+      {error && <p className="text-xs text-lose">{error}</p>}
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          disabled={loading}
+          onClick={async () => {
+            setLoading(true);
+            setError("");
+            try {
+              await proposeResolution(bet.bet_id, winner, note || undefined);
+              setShowPropose(false);
+              onUpdate();
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          Submit
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={loading}
+          onClick={() => {
+            setShowPropose(false);
+            setError("");
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function MyActivity() {
@@ -101,8 +341,8 @@ export default function MyActivity() {
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
   const { displayName, resolve } = useContacts();
 
-  useEffect(() => {
-    getMyActivity()
+  function loadActivity() {
+    return getMyActivity()
       .then((res) => {
         setBlocks(res.blocks);
         setBets(res.bets);
@@ -111,13 +351,20 @@ export default function MyActivity() {
           .filter((id): id is string => !!id);
         if (ids.length > 0) resolve(ids);
       })
-      .catch((err) => setError((err as Error).message))
-      .finally(() => setLoading(false));
+      .catch((err) => setError((err as Error).message));
+  }
+
+  useEffect(() => {
+    loadActivity().finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function refresh() {
+    loadActivity();
+  }
 
   const filteredBlocks =
     tab === "bets"
-      ? blocks.filter((b) => b.record_type === "bet")
+      ? blocks.filter((b) => ["bet", "bet_resolution"].includes(b.record_type))
       : tab === "messages"
         ? blocks.filter((b) =>
             ["hidden_message", "open_message"].includes(b.record_type),
@@ -130,7 +377,9 @@ export default function MyActivity() {
   const messageCount = blocks.filter((b) =>
     ["hidden_message", "open_message"].includes(b.record_type),
   ).length;
-  const betBlockCount = blocks.filter((b) => b.record_type === "bet").length;
+  const betBlockCount = blocks.filter((b) =>
+    ["bet", "bet_resolution"].includes(b.record_type),
+  ).length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "all", label: "All", count: blocks.length + bets.length },
@@ -267,6 +516,11 @@ export default function MyActivity() {
                         {new Date(bet.created_at).toLocaleDateString()}
                       </span>
                     </div>
+
+                    {/* Resolution panel for accepted bets */}
+                    {bet.status === "accepted" && (
+                      <ResolutionPanel bet={bet} onUpdate={refresh} />
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -288,6 +542,7 @@ export default function MyActivity() {
             {filteredBlocks.map((b, i) => {
               const isExpanded = expandedBlock === b.block_index;
               const isBet = b.record_type === "bet";
+              const isResolution = b.record_type === "bet_resolution";
               const isHidden = b.record_type === "hidden_message";
               const isOpen = b.record_type === "open_message";
 
@@ -309,15 +564,19 @@ export default function MyActivity() {
                       className={`shrink-0 size-9 rounded-lg flex items-center justify-center ${
                         isBet
                           ? "bg-lose/10 text-lose"
-                          : isHidden
-                            ? "bg-amber-500/10 text-amber-400"
-                            : isOpen
-                              ? "bg-win/10 text-win"
-                              : "bg-ink text-ink-muted"
+                          : isResolution
+                            ? "bg-win/10 text-win"
+                            : isHidden
+                              ? "bg-amber-500/10 text-amber-400"
+                              : isOpen
+                                ? "bg-win/10 text-win"
+                                : "bg-ink text-ink-muted"
                       }`}
                     >
                       {isBet ? (
                         <Swords className="size-4" />
+                      ) : isResolution ? (
+                        <Trophy className="size-4" />
                       ) : isHidden ? (
                         <EyeOff className="size-4" />
                       ) : (
@@ -331,20 +590,24 @@ export default function MyActivity() {
                           variant={
                             isBet
                               ? "red"
-                              : isHidden
-                                ? "gold"
-                                : isOpen
-                                  ? "green"
-                                  : "muted"
+                              : isResolution
+                                ? "green"
+                                : isHidden
+                                  ? "gold"
+                                  : isOpen
+                                    ? "green"
+                                    : "muted"
                           }
                         >
                           {isBet
                             ? "Bet"
-                            : isHidden
-                              ? "Secret"
-                              : isOpen
-                                ? "Message"
-                                : b.record_type}
+                            : isResolution
+                              ? "Result"
+                              : isHidden
+                                ? "Secret"
+                                : isOpen
+                                  ? "Message"
+                                  : b.record_type}
                         </Badge>
                         {roleBadge(b.role)}
                       </div>

@@ -185,6 +185,18 @@ class ActivityBlock(BaseModel):
     data: dict
 
 
+class BetResolutionSummary(BaseModel):
+    resolution_id: int
+    bet_id: int
+    proposed_by: str  # "initiator" or "counterparty"
+    winner: str  # "initiator" or "counterparty"
+    note: Optional[str] = None
+    status: str  # "pending", "accepted", "rejected"
+    block_hash: Optional[str] = None
+    resolved_at: Optional[str] = None
+    created_at: str
+
+
 class ActivityBet(BaseModel):
     bet_id: int
     bet_terms: str
@@ -197,6 +209,7 @@ class ActivityBet(BaseModel):
     initiator_identifier_type: Optional[str] = None
     expires_at: str
     created_at: str
+    resolution: Optional[BetResolutionSummary] = None
 
 
 class ActivityResponse(BaseModel):
@@ -205,6 +218,32 @@ class ActivityResponse(BaseModel):
 
 
 # --- Contact schemas ---
+
+
+class WinnerSide(str, Enum):
+    initiator = "initiator"
+    counterparty = "counterparty"
+
+
+class BetResolveRequest(BaseModel):
+    winner: WinnerSide
+    note: Optional[str] = None
+
+
+class BetResolveResponse(BaseModel):
+    resolution_id: int
+    message: str
+
+
+class BetResolveRespondRequest(BaseModel):
+    accept: bool
+
+
+class BetResolveRespondResponse(BaseModel):
+    status: str
+    block_hash: Optional[str] = None
+    block_index: Optional[int] = None
+    timestamp: Optional[float] = None
 
 
 class ContactCreate(BaseModel):

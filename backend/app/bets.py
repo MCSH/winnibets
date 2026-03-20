@@ -18,6 +18,10 @@ from app.schemas import (
     BetAcceptResponse,
     BetCreateRequest,
     BetCreateResponse,
+    BetResolveRequest,
+    BetResolveRespondRequest,
+    BetResolveRespondResponse,
+    BetResolveResponse,
     PendingBetSummary,
 )
 
@@ -26,6 +30,7 @@ router = APIRouter(prefix="/bets", tags=["bets"])
 
 def _generate_token() -> str:
     import secrets
+
     return secrets.token_urlsafe(32)
 
 
@@ -125,7 +130,9 @@ def create_bet(
         ),
     )
 
-    return BetCreateResponse(bet_id=pending_bet.id, message="Bet created and invitation sent")
+    return BetCreateResponse(
+        bet_id=pending_bet.id, message="Bet created and invitation sent"
+    )
 
 
 @router.get("/pending", response_model=list[PendingBetSummary])
@@ -154,7 +161,9 @@ def list_pending_bets(
                 bet_terms=bet.bet_terms,
                 visibility=bet.visibility,
                 initiator_identifier=initiator.identifier if initiator else "unknown",
-                initiator_identifier_type=initiator.identifier_type if initiator else "unknown",
+                initiator_identifier_type=initiator.identifier_type
+                if initiator
+                else "unknown",
                 expires_at=bet.expires_at.isoformat(),
                 created_at=bet.created_at.isoformat(),
             )
@@ -218,6 +227,7 @@ def respond_to_bet(
 
         # Notify both parties (FR8) -- must happen before scrubbing terms
         from app.main import blockchain
+
         block = blockchain.add_block(block_data)
         _notify_bet_participants(pending_bet, initiator, current_user, block)
 
@@ -254,7 +264,9 @@ def _scrub_hidden_bet_terms(pending_bet: PendingBet) -> None:
     After accept/decline/expire, the plaintext must not persist.
     """
     if pending_bet.visibility == "hidden":
-        pending_bet.bet_terms = f"[scrubbed:sha256:{hash_content(pending_bet.bet_terms)}]"
+        pending_bet.bet_terms = (
+            f"[scrubbed:sha256:{hash_content(pending_bet.bet_terms)}]"
+        )
 
 
 def _build_bet_block_data(
@@ -320,7 +332,10 @@ def _verify_service_secret(x_service_secret: str | None = Header(None)) -> None:
     if not settings.service_secret:
         raise HTTPException(
             status_code=503,
-            detail={"code": "SERVICE_SECRET_NOT_CONFIGURED", "message": "Service secret not configured"},
+            detail={
+                "code": "SERVICE_SECRET_NOT_CONFIGURED",
+                "message": "Service secret not configured",
+            },
         )
     if x_service_secret != settings.service_secret:
         raise HTTPException(
@@ -363,3 +378,243 @@ def expire_pending_bets(
 
     db.commit()
     return {"expired_count": len(expired_bets)}
+
+
+# --- Bet resolution ---
+
+
+def _get_accepted_bet_and_verify_participant(
+    bet_id: int, db: Session, current_user: User
+) -> tuple[PendingBet, User, User]:
+    """Load an accepted bet and verify the current user is a participant.
+
+    Returns (bet, initiator, counterparty).
+    """
+
+    bet = db.query(PendingBet).filter(PendingBet.id == bet_id).first()
+    if bet is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "BET_NOT_FOUND", "message": "Bet not found"},
+        )
+    if bet.status != "accepted":
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "BET_NOT_ACCEPTED",
+                "message": "Only accepted bets can be resolved",
+            },
+        )
+    if current_user.id not in (bet.initiator_id, bet.counterparty_user_id):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "NOT_PARTICIPANT",
+                "message": "Only bet participants can resolve a bet",
+            },
+        )
+
+    initiator = db.query(User).filter(User.id == bet.initiator_id).first()
+    counterparty = db.query(User).filter(User.id == bet.counterparty_user_id).first()
+    return bet, initiator, counterparty
+
+
+@router.post("/{bet_id}/resolve", response_model=BetResolveResponse, status_code=201)
+def propose_resolution(
+    bet_id: int,
+    body: BetResolveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Propose a result for an accepted bet. The other party must confirm."""
+    from app.models import BetResolution
+
+    bet, initiator, counterparty = _get_accepted_bet_and_verify_participant(
+        bet_id, db, current_user
+    )
+
+    # Check for existing pending resolution
+    existing = (
+        db.query(BetResolution)
+        .filter(
+            BetResolution.bet_id == bet_id,
+            BetResolution.status == "pending",
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "RESOLUTION_ALREADY_PENDING",
+                "message": "A resolution proposal is already pending for this bet",
+            },
+        )
+
+    # Check if already resolved
+    accepted = (
+        db.query(BetResolution)
+        .filter(
+            BetResolution.bet_id == bet_id,
+            BetResolution.status == "accepted",
+        )
+        .first()
+    )
+    if accepted:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "BET_ALREADY_RESOLVED",
+                "message": "This bet has already been resolved",
+            },
+        )
+
+    # Determine winner user ID from the winner side
+    winner_id = (
+        bet.initiator_id
+        if body.winner.value == "initiator"
+        else bet.counterparty_user_id
+    )
+
+    resolution = BetResolution(
+        bet_id=bet_id,
+        proposed_by_id=current_user.id,
+        winner_id=winner_id,
+        note=body.note,
+    )
+    db.add(resolution)
+    db.commit()
+    db.refresh(resolution)
+
+    # Notify the other party
+    other_user = counterparty if current_user.id == bet.initiator_id else initiator
+    proposer_label = f"user {hash_identity(current_user.identifier)[:8]}"
+    winner_label = "themselves" if winner_id == current_user.id else "you"
+    note_text = f"\nNote: {body.note}" if body.note else ""
+    send_notification(
+        identifier=other_user.identifier,
+        identifier_type=other_user.identifier_type,
+        subject="Bet resolution proposed",
+        body=(
+            f"{proposer_label} has proposed a resolution for your bet.\n"
+            f"Proposed winner: {winner_label}{note_text}\n\n"
+            f"Log in to accept or reject this resolution."
+        ),
+    )
+
+    return BetResolveResponse(
+        resolution_id=resolution.id,
+        message="Resolution proposed and notification sent",
+    )
+
+
+@router.post(
+    "/{bet_id}/resolve/respond",
+    response_model=BetResolveRespondResponse,
+)
+def respond_to_resolution(
+    bet_id: int,
+    body: BetResolveRespondRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Accept or reject a pending resolution proposal."""
+    from app.models import BetResolution
+
+    bet, initiator, counterparty = _get_accepted_bet_and_verify_participant(
+        bet_id, db, current_user
+    )
+
+    resolution = (
+        db.query(BetResolution)
+        .filter(
+            BetResolution.bet_id == bet_id,
+            BetResolution.status == "pending",
+        )
+        .first()
+    )
+    if resolution is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "NO_PENDING_RESOLUTION",
+                "message": "No pending resolution for this bet",
+            },
+        )
+
+    # The responder must be the other party (not the proposer)
+    if current_user.id == resolution.proposed_by_id:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "CANNOT_RESPOND_OWN",
+                "message": "You cannot accept or reject your own resolution proposal",
+            },
+        )
+
+    if body.accept:
+        resolution.status = "accepted"
+        resolution.resolved_at = datetime.now(timezone.utc)
+
+        # Determine winner identity hash
+        winner = db.query(User).filter(User.id == resolution.winner_id).first()
+
+        block_data = {
+            "type": "bet_resolution",
+            "bet_block_type": "bet",
+            "initiator_identity_hash": hash_identity(initiator.identifier),
+            "counterparty_identity_hash": hash_identity(counterparty.identifier),
+            "winner_identity_hash": hash_identity(winner.identifier),
+            "winner_side": "initiator"
+            if resolution.winner_id == bet.initiator_id
+            else "counterparty",
+            "timestamp": time.time(),
+        }
+        if resolution.note:
+            block_data["note"] = resolution.note
+
+        from app.main import blockchain
+
+        block = blockchain.add_block(block_data)
+        resolution.block_hash = block.hash
+        db.commit()
+
+        # Notify both parties
+        winner_side = (
+            "initiator" if resolution.winner_id == bet.initiator_id else "counterparty"
+        )
+        note_text = f"\nNote: {resolution.note}" if resolution.note else ""
+        body_text = (
+            f"A bet resolution has been recorded on the chain.\n"
+            f"Winner: {winner_side}{note_text}\n"
+            f"Block hash: {block.hash}\n"
+            f"Timestamp: {block.timestamp}"
+        )
+        for user in [initiator, counterparty]:
+            send_notification(
+                identifier=user.identifier,
+                identifier_type=user.identifier_type,
+                subject="Bet resolved",
+                body=body_text,
+            )
+
+        return BetResolveRespondResponse(
+            status="accepted",
+            block_hash=block.hash,
+            block_index=block.index,
+            timestamp=block.timestamp,
+        )
+    else:
+        resolution.status = "rejected"
+        db.commit()
+
+        # Notify the proposer
+        proposer = db.query(User).filter(User.id == resolution.proposed_by_id).first()
+        send_notification(
+            identifier=proposer.identifier,
+            identifier_type=proposer.identifier_type,
+            subject="Resolution rejected",
+            body="Your proposed bet resolution was rejected by the other party.",
+        )
+
+        return BetResolveRespondResponse(status="rejected")
