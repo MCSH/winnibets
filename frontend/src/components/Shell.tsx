@@ -2,9 +2,10 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X, MessageSquarePlus, Swords } from "lucide-react";
+import { LogOut, Menu, X, MessageSquarePlus, Swords, Download } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useInstallPrompt } from "@/lib/pwa";
 
 const AUTH_NAV = [
   { to: "/message", label: "Message" },
@@ -23,6 +24,7 @@ export default function Shell() {
   const navigate = useNavigate();
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { showBanner, install, dismiss } = useInstallPrompt();
 
   const showFabs = user && !["/message", "/bet"].includes(location.pathname);
 
@@ -137,6 +139,38 @@ export default function Shell() {
           )}
         </AnimatePresence>
       </header>
+
+      {/* Install app banner */}
+      <AnimatePresence>
+        {showBanner && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-accent/10 border-b border-accent/20 overflow-hidden"
+          >
+            <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Download className="size-4 text-accent shrink-0" />
+                <span className="text-sm text-chalk truncate">
+                  Install WinniBets for quick access
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button size="sm" onClick={install}>
+                  Install
+                </Button>
+                <button
+                  onClick={dismiss}
+                  className="text-chalk-dim hover:text-chalk transition-colors cursor-pointer p-1"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Page content */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
