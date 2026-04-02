@@ -2,9 +2,10 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X, MessageSquarePlus, Swords } from "lucide-react";
+import { LogOut, Menu, X, MessageSquarePlus, Swords, Sun, Monitor, Moon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/lib/theme";
 
 const AUTH_NAV = [
   { to: "/message", label: "Message" },
@@ -17,10 +18,17 @@ const AUTH_NAV = [
 
 const PUBLIC_NAV = [{ to: "/explorer", label: "Ledger" }] as const;
 
+const THEME_OPTIONS = [
+  { value: "light" as const, icon: Sun, label: "Light" },
+  { value: "system" as const, icon: Monitor, label: "System" },
+  { value: "dark" as const, icon: Moon, label: "Dark" },
+];
+
 export default function Shell() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -67,6 +75,27 @@ export default function Shell() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Theme toggle */}
+            <div className="flex items-center rounded-lg border border-ink-border bg-ink-lighter p-0.5">
+              {THEME_OPTIONS.map((opt) => {
+                const active = theme === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setTheme(opt.value)}
+                    className={`cursor-pointer rounded-md p-1.5 transition-colors ${
+                      active
+                        ? "bg-accent text-white"
+                        : "text-ink-muted hover:text-chalk"
+                    }`}
+                    title={opt.label}
+                  >
+                    <opt.icon className="size-3.5" />
+                  </button>
+                );
+              })}
+            </div>
+
             {user ? (
               <>
                 <span className="text-xs font-mono text-ink-muted hidden sm:block">
