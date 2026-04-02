@@ -5,21 +5,19 @@
   --font-body: "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* Dark surface hierarchy */
-  --color-ink: #0b0e11;
-  --color-ink-light: #131720;
-  --color-ink-lighter: #1a2030;
-  --color-ink-border: #252d3d;
-  --color-ink-muted: #5a6578;
+  /* Theme-aware colors (resolved via CSS variables) */
+  --color-ink: var(--t-ink);
+  --color-ink-light: var(--t-ink-light);
+  --color-ink-lighter: var(--t-ink-lighter);
+  --color-ink-border: var(--t-ink-border);
+  --color-ink-muted: var(--t-ink-muted);
+  --color-chalk: var(--t-chalk);
+  --color-chalk-dim: var(--t-chalk-dim);
 
   /* Primary — FanDuel-style vibrant blue */
   --color-accent: #1493ff;
   --color-accent-dim: #0d6ecc;
   --color-accent-bright: #4db1ff;
-
-  /* Text */
-  --color-chalk: #eef0f4;
-  --color-chalk-dim: #8892a4;
 
   /* Semantic */
   --color-win: #00c853;
@@ -29,13 +27,35 @@
   --color-highlight: #ff8c00;
 }
 
+/* Light theme (default) */
+:root {
+  --t-ink: #ffffff;
+  --t-ink-light: #f5f7fa;
+  --t-ink-lighter: #ebeef3;
+  --t-ink-border: #d5dae3;
+  --t-ink-muted: #8892a4;
+  --t-chalk: #111827;
+  --t-chalk-dim: #5a6578;
+}
+
+/* Dark theme */
+.dark {
+  --t-ink: #0b0e11;
+  --t-ink-light: #131720;
+  --t-ink-lighter: #1a2030;
+  --t-ink-border: #252d3d;
+  --t-ink-muted: #5a6578;
+  --t-chalk: #eef0f4;
+  --t-chalk-dim: #8892a4;
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
-  background: var(--color-ink);
-  color: var(--color-chalk);
+  background: var(--t-ink);
+  color: var(--t-chalk);
   font-family: var(--font-body);
 }
 
@@ -62,7 +82,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-ink-border);
+  background: var(--t-ink-border);
   border-radius: 3px;
 }
 
@@ -71,15 +91,15 @@ body {
   color: white;
 }
 
-/* Override browser autofill styles for dark theme */
+/* Override browser autofill styles */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
 textarea:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-ink) inset !important;
-  -webkit-text-fill-color: var(--color-chalk) !important;
-  caret-color: var(--color-chalk);
+  -webkit-box-shadow: 0 0 0 1000px var(--t-ink) inset !important;
+  -webkit-text-fill-color: var(--t-chalk) !important;
+  caret-color: var(--t-chalk);
   transition: background-color 5000s ease-in-out 0s;
 }

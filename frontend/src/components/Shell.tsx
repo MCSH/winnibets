@@ -2,10 +2,11 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X, MessageSquarePlus, Swords, Download } from "lucide-react";
+import { LogOut, Menu, X, MessageSquarePlus, Swords, Download, Sun, Monitor, Moon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInstallPrompt } from "@/lib/pwa";
+import { useTheme } from "@/lib/theme";
 
 const AUTH_NAV = [
   { to: "/message", label: "Message" },
@@ -18,10 +19,17 @@ const AUTH_NAV = [
 
 const PUBLIC_NAV = [{ to: "/explorer", label: "Ledger" }] as const;
 
+const THEME_OPTIONS = [
+  { value: "light" as const, icon: Sun, label: "Light" },
+  { value: "system" as const, icon: Monitor, label: "System" },
+  { value: "dark" as const, icon: Moon, label: "Dark" },
+];
+
 export default function Shell() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
   const [mobileOpen, setMobileOpen] = useState(false);
   const { showBanner, install, dismiss } = useInstallPrompt();
@@ -69,6 +77,27 @@ export default function Shell() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Theme toggle */}
+            <div className="flex items-center rounded-lg border border-ink-border bg-ink-lighter p-0.5">
+              {THEME_OPTIONS.map((opt) => {
+                const active = theme === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setTheme(opt.value)}
+                    className={`cursor-pointer rounded-md p-1.5 transition-colors ${
+                      active
+                        ? "bg-accent text-white"
+                        : "text-ink-muted hover:text-chalk"
+                    }`}
+                    title={opt.label}
+                  >
+                    <opt.icon className="size-3.5" />
+                  </button>
+                );
+              })}
+            </div>
+
             {user ? (
               <>
                 <span className="text-xs font-mono text-ink-muted hidden sm:block">
@@ -205,17 +234,17 @@ export default function Shell() {
       <AnimatePresence>
         {showFabs && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 flex flex-col gap-3 z-50"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-50"
           >
             <button
               onClick={() => navigate("/message")}
-              className="group flex items-center gap-2 cursor-pointer"
+              className="group relative cursor-pointer"
             >
-              <span className="hidden group-hover:block text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap">
+              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap pointer-events-none">
                 New Message
               </span>
               <span className="size-12 rounded-full bg-ink-lighter border border-ink-border/50 shadow-lg flex items-center justify-center text-chalk-dim hover:text-accent hover:border-accent/50 transition-colors">
@@ -224,9 +253,9 @@ export default function Shell() {
             </button>
             <button
               onClick={() => navigate("/bet")}
-              className="group flex items-center gap-2 cursor-pointer"
+              className="group relative cursor-pointer"
             >
-              <span className="hidden group-hover:block text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap">
+              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap pointer-events-none">
                 New Bet
               </span>
               <span className="size-14 rounded-full bg-accent shadow-lg shadow-accent/25 flex items-center justify-center text-ink hover:bg-accent-bright transition-colors">

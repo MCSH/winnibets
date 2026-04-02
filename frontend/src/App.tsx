@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ContactsProvider } from "@/lib/contacts";
+import { ThemeProvider } from "@/lib/theme";
 import Shell from "@/components/Shell";
 import Login from "@/pages/Login";
 import Verify from "@/pages/Verify";
@@ -115,11 +116,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ContactsProvider>
-          <AppRoutes />
-        </ContactsProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ContactsProvider>
+            <AppRoutes />
+          </ContactsProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
