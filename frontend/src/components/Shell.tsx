@@ -200,17 +200,17 @@ export default function Shell() {
       <AnimatePresence>
         {showFabs && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 flex flex-col gap-3 z-50"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-50"
           >
             <button
               onClick={() => navigate("/message")}
-              className="group flex items-center gap-2 cursor-pointer"
+              className="group relative cursor-pointer"
             >
-              <span className="hidden group-hover:block text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap">
+              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap pointer-events-none">
                 New Message
               </span>
               <span className="size-12 rounded-full bg-ink-lighter border border-ink-border/50 shadow-lg flex items-center justify-center text-chalk-dim hover:text-accent hover:border-accent/50 transition-colors">
@@ -219,9 +219,9 @@ export default function Shell() {
             </button>
             <button
               onClick={() => navigate("/bet")}
-              className="group flex items-center gap-2 cursor-pointer"
+              className="group relative cursor-pointer"
             >
-              <span className="hidden group-hover:block text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap">
+              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium text-chalk bg-ink-lighter border border-ink-border/50 rounded-md px-2 py-1 shadow-lg whitespace-nowrap pointer-events-none">
                 New Bet
               </span>
               <span className="size-14 rounded-full bg-accent shadow-lg shadow-accent/25 flex items-center justify-center text-ink hover:bg-accent-bright transition-colors">
