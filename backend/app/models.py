@@ -164,6 +164,29 @@ class BetResolution(Base):
     winner = relationship("User", foreign_keys=[winner_id])
 
 
+class IDVerification(Base):
+    """ID document verification results."""
+
+    __tablename__ = "id_verifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    document_type = Column(String(20), nullable=False)  # "passport" or "drivers_license"
+    provided_name = Column(String(255), nullable=False)
+    extracted_name = Column(String(255), nullable=True)
+    mrz_valid = Column(Boolean, nullable=True)
+    name_match = Column(Boolean, nullable=False, default=False)
+    status = Column(String(20), nullable=False)  # "verified", "failed"
+    failure_reason = Column(Text, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    user = relationship("User", foreign_keys=[user_id])
+
+
 class SessionToken(Base):
     """Active user sessions created after magic link verification."""
 

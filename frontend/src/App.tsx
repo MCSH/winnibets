@@ -13,6 +13,7 @@ import PendingBets from "@/pages/PendingBets";
 import Explorer from "@/pages/Explorer";
 import MyActivity from "@/pages/MyActivity";
 import Contacts from "@/pages/Contacts";
+import Verification from "@/pages/Verification";
 import type { ReactNode } from "react";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -86,6 +87,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <Contacts />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/verification"
+          element={
+            <RequireAuth>
+              <Verification />
             </RequireAuth>
           }
         />

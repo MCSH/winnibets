@@ -111,6 +111,7 @@ from app.blocks import router as blocks_router  # noqa: E402
 from app.bets import router as bets_router  # noqa: E402
 from app.activity import router as activity_router  # noqa: E402
 from app.contacts import router as contacts_router  # noqa: E402
+from app.verification import router as verification_router  # noqa: E402
 
 app.include_router(auth_router)
 app.include_router(messages_router)
@@ -118,3 +119,4 @@ app.include_router(blocks_router)
 app.include_router(bets_router)
 app.include_router(activity_router)
 app.include_router(contacts_router)
+app.include_router(verification_router)

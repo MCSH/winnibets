@@ -247,6 +247,78 @@ export function resolveContacts(identifiers: string[]) {
   });
 }
 
+// --- ID Verification ---
+
+export interface IDVerificationResult {
+  status: "verified" | "failed";
+  document_type: string;
+  provided_name: string;
+  extracted_name?: string;
+  mrz_valid?: boolean;
+  name_match: boolean;
+  failure_reason?: string;
+  created_at: string;
+}
+
+export interface VerificationStatus {
+  status: "verified" | "failed" | "none";
+  document_type?: string;
+  provided_name?: string;
+  extracted_name?: string;
+  mrz_valid?: boolean;
+  name_match?: boolean;
+  failure_reason?: string;
+  created_at?: string;
+}
+
+async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const msg =
+      body?.detail?.message ?? body?.detail?.[0]?.msg ?? res.statusText;
+    const code = body?.detail?.code ?? `HTTP_${res.status}`;
+    const err = new Error(msg) as Error & {
+      code: string;
+      status: number;
+      retryAfter?: number;
+    };
+    err.code = code;
+    err.status = res.status;
+    if (res.status === 429) {
+      err.retryAfter = Number(res.headers.get("Retry-After") ?? 60);
+    }
+    throw err;
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export function verifyID(
+  image: File,
+  documentType: "passport" | "drivers_license",
+  providedName: string,
+) {
+  const fd = new FormData();
+  fd.append("image", image);
+  fd.append("document_type", documentType);
+  fd.append("provided_name", providedName);
+  return uploadRequest<IDVerificationResult>("/verification/verify", fd);
+}
+
+export function getVerificationStatus() {
+  return request<VerificationStatus>("/verification/status");
+}
+
 // --- Blocks ---
 
 export function lookupBlock(blockHash: string) {

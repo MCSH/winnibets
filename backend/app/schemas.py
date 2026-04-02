@@ -295,3 +295,33 @@ class ContactsResolveResponse(BaseModel):
 class ContactSuggestion(BaseModel):
     identifier: str
     identifier_type: str
+
+
+# --- ID Verification schemas ---
+
+
+class DocumentType(str, Enum):
+    passport = "passport"
+    drivers_license = "drivers_license"
+
+
+class IDVerificationResponse(BaseModel):
+    status: str  # "verified" or "failed"
+    document_type: str
+    provided_name: str
+    extracted_name: Optional[str] = None
+    mrz_valid: Optional[bool] = None
+    name_match: bool
+    failure_reason: Optional[str] = None
+    created_at: str
+
+
+class VerificationStatusResponse(BaseModel):
+    status: str  # "verified", "failed", or "none"
+    document_type: Optional[str] = None
+    provided_name: Optional[str] = None
+    extracted_name: Optional[str] = None
+    mrz_valid: Optional[bool] = None
+    name_match: Optional[bool] = None
+    failure_reason: Optional[str] = None
+    created_at: Optional[str] = None

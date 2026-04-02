@@ -14,6 +14,7 @@ const AUTH_NAV = [
   { to: "/pending", label: "Pending" },
   { to: "/activity", label: "My Activity" },
   { to: "/contacts", label: "Contacts" },
+  { to: "/verification", label: "Verify ID" },
   { to: "/explorer", label: "Ledger" },
 ] as const;
 

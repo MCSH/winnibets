@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # SendGrid Email
     sendgrid_api_key: str = ""
     sendgrid_from_email: str = ""
+    # Ollama vision model for ID verification
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llava"
 
     model_config = {"env_prefix": "WINNIBETS_"}
 
