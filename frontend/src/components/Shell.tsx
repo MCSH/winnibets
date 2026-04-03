@@ -20,7 +20,10 @@ const AUTH_NAV = [
   { to: "/profile", label: "Profile" },
 ] as const;
 
-const PUBLIC_NAV = [{ to: "/explorer", label: "Ledger" }] as const;
+const PUBLIC_NAV = [
+  { to: "/explorer", label: "Ledger" },
+  { to: "/leaderboard", label: "Leaderboard" },
+] as const;
 
 const THEME_OPTIONS = [
   { value: "light" as const, icon: Sun, label: "Light" },
