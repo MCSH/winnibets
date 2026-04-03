@@ -28,20 +28,44 @@ def _collect_identity_hashes(blocks_data: list[dict]) -> set[str]:
     return hashes
 
 
-def _resolve_user_info(identity_hashes: set[str], db: Session) -> tuple[dict[str, str], dict[str, int]]:
-    """Map identity hashes to nicknames and avatar seeds."""
+def _resolve_user_info(identity_hashes: set[str], db: Session) -> tuple[dict[str, str], dict[str, int], dict[str, str], dict[str, dict]]:
+    """Map identity hashes to nicknames, avatar seeds, genomes, and stats."""
     if not identity_hashes:
-        return {}, {}
+        return {}, {}, {}, {}
+
+    from app.models import BetResolution, PendingBet
+
     users = db.query(User).all()
     nicknames: dict[str, str] = {}
     seeds: dict[str, int] = {}
+    genomes: dict[str, str] = {}
+    pet_stats: dict[str, dict] = {}
+
     for user in users:
         h = hash_identity(user.identifier)
         if h in identity_hashes:
             if user.nickname:
                 nicknames[h] = user.nickname
             seeds[h] = user.avatar_seed
-    return nicknames, seeds
+            genomes[h] = user.genome or h
+
+            bets = db.query(PendingBet).filter(
+                (PendingBet.initiator_id == user.id)
+                | (PendingBet.counterparty_user_id == user.id)
+            ).count()
+            wins = 0
+            for bet in db.query(PendingBet).filter(
+                (PendingBet.initiator_id == user.id)
+                | (PendingBet.counterparty_user_id == user.id)
+            ).all():
+                res = db.query(BetResolution).filter(
+                    BetResolution.bet_id == bet.id, BetResolution.status == "accepted"
+                ).first()
+                if res and res.winner_id == user.id:
+                    wins += 1
+            pet_stats[h] = {"bets": bets, "wins": wins, "beers": user.beer_balance}
+
+    return nicknames, seeds, genomes, pet_stats
 
 
 @router.get("/list", response_model=BlockListResponse)
@@ -63,7 +87,7 @@ def list_blocks(offset: int = 0, limit: int = 20, db: Session = Depends(get_db))
 
     blocks_data = [b.data for b in blocks]
     identity_hashes = _collect_identity_hashes(blocks_data)
-    nicknames, avatar_seeds = _resolve_user_info(identity_hashes, db)
+    nicknames, avatar_seeds, genomes, pet_stats = _resolve_user_info(identity_hashes, db)
 
     return BlockListResponse(
         blocks=[
@@ -81,6 +105,8 @@ def list_blocks(offset: int = 0, limit: int = 20, db: Session = Depends(get_db))
         limit=limit,
         nicknames=nicknames,
         avatar_seeds=avatar_seeds,
+        genomes=genomes,
+        pet_stats=pet_stats,
     )
 
 

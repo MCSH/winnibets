@@ -31,6 +31,7 @@ class User(Base):
     beer_balance = Column(Integer, nullable=False, default=10)
     avatar_seed = Column(Integer, nullable=False, default=0)
     avatar_regen_date = Column(String(10), nullable=True)  # YYYY-MM-DD of last regen
+    genome = Column(String(64), nullable=True)  # hex string driving pet appearance, evolves via betting
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

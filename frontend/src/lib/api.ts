@@ -50,7 +50,7 @@ export function verifyToken(token: string) {
 }
 
 export function getMe() {
-  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number; identity_hash: string; avatar_seed: number; can_regen_avatar: boolean }>("/auth/me");
+  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number; identity_hash: string; avatar_seed: number; can_regen_avatar: boolean; genome: string; total_bets: number; total_wins: number }>("/auth/me");
 }
 
 export function regenerateAvatar() {
@@ -337,6 +337,7 @@ export interface PublicProfile {
   beer_balance: number;
   verified: boolean;
   avatar_seed: number;
+  genome: string;
   stats: {
     bets: number;
     wins: number;
@@ -355,6 +356,7 @@ export interface LeaderboardEntry {
   beer_balance: number;
   verified: boolean;
   avatar_seed: number;
+  genome: string;
   bets: number;
   wins: number;
   losses: number;
@@ -399,5 +401,7 @@ export function listBlocks(offset = 0, limit = 20) {
     limit: number;
     nicknames: Record<string, string>;
     avatar_seeds: Record<string, number>;
+    genomes: Record<string, string>;
+    pet_stats: Record<string, { bets: number; wins: number; beers: number }>;
   }>(`/blocks/list?offset=${offset}&limit=${limit}`);
 }

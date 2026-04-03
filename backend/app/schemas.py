@@ -48,6 +48,9 @@ class UserResponse(BaseModel):
     identity_hash: str = ""
     avatar_seed: int = 0
     can_regen_avatar: bool = True
+    genome: str = ""
+    total_bets: int = 0
+    total_wins: int = 0
 
 
 # --- Hidden message schemas ---
@@ -173,6 +176,8 @@ class BlockListResponse(BaseModel):
     limit: int
     nicknames: dict[str, str] = {}  # identity_hash → nickname
     avatar_seeds: dict[str, int] = {}  # identity_hash → avatar_seed
+    genomes: dict[str, str] = {}  # identity_hash → genome
+    pet_stats: dict[str, dict] = {}  # identity_hash → {bets, wins}
 
 
 # --- Integrity check schemas ---

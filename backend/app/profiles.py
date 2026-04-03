@@ -18,6 +18,7 @@ class PublicProfile(BaseModel):
     beer_balance: int = 10
     verified: bool = False
     avatar_seed: int = 0
+    genome: str = ""
     stats: dict
 
 
@@ -27,6 +28,7 @@ class LeaderboardEntry(BaseModel):
     beer_balance: int = 10
     verified: bool = False
     avatar_seed: int = 0
+    genome: str = ""
     bets: int = 0
     wins: int = 0
     losses: int = 0
@@ -79,6 +81,7 @@ def get_leaderboard(db: Session = Depends(get_db)):
                 beer_balance=user.beer_balance,
                 verified=user.id in verified_ids,
                 avatar_seed=user.avatar_seed,
+                genome=user.genome or hash_identity(user.identifier),
                 bets=len(bets),
                 wins=wins,
                 losses=losses,
@@ -149,12 +152,18 @@ def get_public_profile(identity_hash: str, db: Session = Depends(get_db)):
         elif data.get("counterparty_identity_hash") == identity_hash:
             block_count += 1
 
+    # Ensure genome is initialized
+    if not target.genome:
+        target.genome = identity_hash
+        db.commit()
+
     return PublicProfile(
         identity_hash=identity_hash,
         nickname=target.nickname,
         beer_balance=target.beer_balance,
         verified=verification is not None,
         avatar_seed=target.avatar_seed,
+        genome=target.genome,
         stats={
             "bets": len(bets),
             "wins": wins,

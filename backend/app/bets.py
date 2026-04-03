@@ -316,6 +316,29 @@ def _scrub_hidden_bet_terms(pending_bet: PendingBet) -> None:
         )
 
 
+def _mix_genomes(user_a: User, user_b: User) -> None:
+    """Crossover two users' genomes — each gets a mix of both."""
+    import hashlib
+
+    ga = user_a.genome or hash_identity(user_a.identifier)
+    gb = user_b.genome or hash_identity(user_b.identifier)
+
+    # XOR crossover: alternate nibbles from each parent, then hash for stability
+    mixed_a = ""
+    mixed_b = ""
+    for i in range(min(len(ga), len(gb))):
+        if i % 3 == 0:
+            mixed_a += gb[i]
+            mixed_b += ga[i]
+        else:
+            mixed_a += ga[i]
+            mixed_b += gb[i]
+
+    # Hash the result to get clean 64-char hex genomes
+    user_a.genome = hashlib.sha256(mixed_a.encode()).hexdigest()
+    user_b.genome = hashlib.sha256(mixed_b.encode()).hexdigest()
+
+
 def _build_bet_block_data(
     pending_bet: PendingBet,
     initiator: User,
@@ -615,6 +638,9 @@ def respond_to_resolution(
         if bet.beer_wager:
             winner_user = db.query(User).filter(User.id == resolution.winner_id).first()
             winner_user.beer_balance += bet.beer_wager * 2
+
+        # Evolve both pets — mix genomes via crossover
+        _mix_genomes(initiator, counterparty)
 
         # Determine winner identity hash
         winner = db.query(User).filter(User.id == resolution.winner_id).first()

@@ -75,7 +75,7 @@ export default function UserProfile() {
           <CardContent className="space-y-5">
             <div className="flex items-start gap-4">
               <div className="shrink-0">
-                <GlyphPet hash={profile.identity_hash} seed={profile.avatar_seed} size={64} />
+                <GlyphPet hash={profile.identity_hash} seed={profile.avatar_seed} genome={profile.genome} stats={{ bets: profile.stats.bets, wins: profile.stats.wins, beers: profile.beer_balance }} size={64} />
               </div>
 
               <div className="flex-1 min-w-0 space-y-2">

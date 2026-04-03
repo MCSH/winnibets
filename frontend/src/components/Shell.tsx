@@ -111,7 +111,7 @@ export default function Shell() {
                   to="/profile"
                   className="text-xs font-mono text-ink-muted hidden sm:flex items-center gap-2 hover:text-accent transition-colors no-underline"
                 >
-                  <GlyphPet hash={user.identity_hash} seed={user.avatar_seed} size={28} />
+                  <GlyphPet hash={user.identity_hash} seed={user.avatar_seed} genome={user.genome} stats={{ bets: user.total_bets, wins: user.total_wins, beers: user.beer_balance }} size={28} />
                   <span>{user.nickname ?? user.identifier}</span>
                   <span className="text-amber-400">{user.beer_balance}</span>
                 </Link>

@@ -16,6 +16,9 @@ interface User {
   identity_hash: string;
   avatar_seed: number;
   can_regen_avatar: boolean;
+  genome: string;
+  total_bets: number;
+  total_wins: number;
 }
 
 interface AuthCtx {

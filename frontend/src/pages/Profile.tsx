@@ -97,7 +97,7 @@ export default function Profile() {
             <div className="flex items-start gap-4">
               {/* Avatar */}
               <div className="shrink-0 flex flex-col items-center gap-1">
-                <GlyphPet hash={user.identity_hash} seed={user.avatar_seed} size={64} />
+                <GlyphPet hash={user.identity_hash} seed={user.avatar_seed} genome={user.genome} stats={{ bets: user.total_bets, wins: user.total_wins, beers: user.beer_balance }} size={64} />
                 {user.can_regen_avatar && (
                   <button
                     onClick={async () => {

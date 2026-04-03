@@ -163,7 +163,7 @@ export default function Leaderboard() {
                   {/* Avatar + name */}
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <div className="shrink-0">
-                      <GlyphPet hash={entry.identity_hash} seed={entry.avatar_seed} size={36} />
+                      <GlyphPet hash={entry.identity_hash} seed={entry.avatar_seed} genome={entry.genome} stats={{ bets: entry.bets, wins: entry.wins, beers: entry.beer_balance }} size={36} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">

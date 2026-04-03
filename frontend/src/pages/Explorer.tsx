@@ -125,6 +125,8 @@ export default function Explorer() {
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
   const [nicknames, setNicknames] = useState<Record<string, string>>({});
   const [avatarSeeds, setAvatarSeeds] = useState<Record<string, number>>({});
+  const [genomes, setGenomes] = useState<Record<string, string>>({});
+  const [petStats, setPetStats] = useState<Record<string, { bets: number; wins: number; beers: number }>>({});
 
   useEffect(() => {
     loadBlocks(0);
@@ -139,6 +141,8 @@ export default function Explorer() {
       setOffset(newOffset);
       setNicknames(res.nicknames ?? {});
       setAvatarSeeds(res.avatar_seeds ?? {});
+      setGenomes(res.genomes ?? {});
+      setPetStats(res.pet_stats ?? {});
     } catch {
       // silently fail
     } finally {
@@ -250,7 +254,7 @@ export default function Explorer() {
                     {/* Icon / GlyphPet */}
                     {primaryHash ? (
                       <div className="shrink-0">
-                        <GlyphPet hash={primaryHash} seed={avatarSeeds[primaryHash] ?? 0} size={32} />
+                        <GlyphPet hash={primaryHash} seed={avatarSeeds[primaryHash] ?? 0} genome={genomes[primaryHash]} stats={petStats[primaryHash]} size={32} />
                       </div>
                     ) : (
                       <span

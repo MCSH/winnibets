@@ -124,21 +124,53 @@ def verify_magic_link(
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Return the current authenticated user's info."""
     from datetime import date
+    from app.models import BetResolution, PendingBet
 
     today = date.today().isoformat()
     can_regen = current_user.avatar_regen_date != today
+    identity_h = hash_identity(current_user.identifier)
+
+    # Ensure genome is initialized
+    if not current_user.genome:
+        current_user.genome = identity_h
+        db.commit()
+
+    # Count bets and wins
+    bets = (
+        db.query(PendingBet)
+        .filter(
+            (PendingBet.initiator_id == current_user.id)
+            | (PendingBet.counterparty_user_id == current_user.id)
+        )
+        .all()
+    )
+    wins = 0
+    for bet in bets:
+        res = (
+            db.query(BetResolution)
+            .filter(BetResolution.bet_id == bet.id, BetResolution.status == "accepted")
+            .first()
+        )
+        if res and res.winner_id == current_user.id:
+            wins += 1
 
     return UserResponse(
         identifier=current_user.identifier,
         identifier_type=current_user.identifier_type,
         nickname=current_user.nickname,
         beer_balance=current_user.beer_balance,
-        identity_hash=hash_identity(current_user.identifier),
+        identity_hash=identity_h,
         avatar_seed=current_user.avatar_seed,
         can_regen_avatar=can_regen,
+        genome=current_user.genome,
+        total_bets=len(bets),
+        total_wins=wins,
     )
 
 
