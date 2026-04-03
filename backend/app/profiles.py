@@ -17,6 +17,7 @@ class PublicProfile(BaseModel):
     nickname: Optional[str] = None
     beer_balance: int = 10
     verified: bool = False
+    avatar_seed: int = 0
     stats: dict
 
 
@@ -25,6 +26,7 @@ class LeaderboardEntry(BaseModel):
     nickname: Optional[str] = None
     beer_balance: int = 10
     verified: bool = False
+    avatar_seed: int = 0
     bets: int = 0
     wins: int = 0
     losses: int = 0
@@ -76,6 +78,7 @@ def get_leaderboard(db: Session = Depends(get_db)):
                 nickname=user.nickname,
                 beer_balance=user.beer_balance,
                 verified=user.id in verified_ids,
+                avatar_seed=user.avatar_seed,
                 bets=len(bets),
                 wins=wins,
                 losses=losses,
@@ -151,6 +154,7 @@ def get_public_profile(identity_hash: str, db: Session = Depends(get_db)):
         nickname=target.nickname,
         beer_balance=target.beer_balance,
         verified=verification is not None,
+        avatar_seed=target.avatar_seed,
         stats={
             "bets": len(bets),
             "wins": wins,

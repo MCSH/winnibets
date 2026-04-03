@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import {
   getVerificationStatus,
   getMyActivity,
+  regenerateAvatar,
   type VerificationStatus,
 } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import { Link } from "react-router-dom";
 import GlyphPet from "@/components/GlyphPet";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [verification, setVerification] = useState<VerificationStatus | null>(
     null,
   );
@@ -95,8 +96,21 @@ export default function Profile() {
           <CardContent className="space-y-5">
             <div className="flex items-start gap-4">
               {/* Avatar */}
-              <div className="shrink-0">
-                <GlyphPet hash={user.identity_hash} size={64} />
+              <div className="shrink-0 flex flex-col items-center gap-1">
+                <GlyphPet hash={user.identity_hash} seed={user.avatar_seed} size={64} />
+                {user.can_regen_avatar && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await regenerateAvatar();
+                        refresh();
+                      } catch {}
+                    }}
+                    className="text-[10px] text-accent hover:text-accent-bright cursor-pointer transition-colors"
+                  >
+                    reroll
+                  </button>
+                )}
               </div>
 
               <div className="flex-1 min-w-0 space-y-1">

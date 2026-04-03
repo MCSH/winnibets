@@ -126,13 +126,42 @@ def verify_magic_link(
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     """Return the current authenticated user's info."""
+    from datetime import date
+
+    today = date.today().isoformat()
+    can_regen = current_user.avatar_regen_date != today
+
     return UserResponse(
         identifier=current_user.identifier,
         identifier_type=current_user.identifier_type,
         nickname=current_user.nickname,
         beer_balance=current_user.beer_balance,
         identity_hash=hash_identity(current_user.identifier),
+        avatar_seed=current_user.avatar_seed,
+        can_regen_avatar=can_regen,
     )
+
+
+@router.post("/regenerate-avatar")
+def regenerate_avatar(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Regenerate avatar. Once per day."""
+    from datetime import date
+
+    today = date.today().isoformat()
+    if current_user.avatar_regen_date == today:
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "ALREADY_REGENERATED", "message": "You can regenerate once per day"},
+        )
+
+    current_user.avatar_seed += 1
+    current_user.avatar_regen_date = today
+    db.commit()
+
+    return {"avatar_seed": current_user.avatar_seed}
 
 
 # --- Test-only endpoints (only registered when WINNIBETS_DEBUG=true) ---

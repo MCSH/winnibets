@@ -29,6 +29,8 @@ class User(Base):
     identifier_type = Column(String(10), nullable=False)  # "email" or "phone"
     nickname = Column(String(255), nullable=True)
     beer_balance = Column(Integer, nullable=False, default=10)
+    avatar_seed = Column(Integer, nullable=False, default=0)
+    avatar_regen_date = Column(String(10), nullable=True)  # YYYY-MM-DD of last regen
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

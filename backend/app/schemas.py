@@ -46,6 +46,8 @@ class UserResponse(BaseModel):
     nickname: Optional[str] = None
     beer_balance: int = 10
     identity_hash: str = ""
+    avatar_seed: int = 0
+    can_regen_avatar: bool = True
 
 
 # --- Hidden message schemas ---
@@ -170,6 +172,7 @@ class BlockListResponse(BaseModel):
     offset: int
     limit: int
     nicknames: dict[str, str] = {}  # identity_hash → nickname
+    avatar_seeds: dict[str, int] = {}  # identity_hash → avatar_seed
 
 
 # --- Integrity check schemas ---

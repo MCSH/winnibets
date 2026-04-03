@@ -50,7 +50,11 @@ export function verifyToken(token: string) {
 }
 
 export function getMe() {
-  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number; identity_hash: string }>("/auth/me");
+  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number; identity_hash: string; avatar_seed: number; can_regen_avatar: boolean }>("/auth/me");
+}
+
+export function regenerateAvatar() {
+  return request<{ avatar_seed: number }>("/auth/regenerate-avatar", { method: "POST" });
 }
 
 // --- Messages ---
@@ -332,6 +336,7 @@ export interface PublicProfile {
   nickname?: string;
   beer_balance: number;
   verified: boolean;
+  avatar_seed: number;
   stats: {
     bets: number;
     wins: number;
@@ -349,6 +354,7 @@ export interface LeaderboardEntry {
   nickname?: string;
   beer_balance: number;
   verified: boolean;
+  avatar_seed: number;
   bets: number;
   wins: number;
   losses: number;
@@ -392,5 +398,6 @@ export function listBlocks(offset = 0, limit = 20) {
     offset: number;
     limit: number;
     nicknames: Record<string, string>;
+    avatar_seeds: Record<string, number>;
   }>(`/blocks/list?offset=${offset}&limit=${limit}`);
 }

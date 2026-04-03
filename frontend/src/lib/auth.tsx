@@ -14,6 +14,8 @@ interface User {
   nickname?: string;
   beer_balance: number;
   identity_hash: string;
+  avatar_seed: number;
+  can_regen_avatar: boolean;
 }
 
 interface AuthCtx {
