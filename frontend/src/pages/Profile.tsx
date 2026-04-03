@@ -194,7 +194,16 @@ export default function Profile() {
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <Card>
+              <CardContent className="py-4 text-center space-y-1">
+                <span className="text-xl mx-auto block">🍺</span>
+                <p className="text-2xl font-semibold text-amber-400">
+                  {user.beer_balance}
+                </p>
+                <p className="text-xs text-chalk-dim">Beers</p>
+              </CardContent>
+            </Card>
             <Card>
               <CardContent className="py-4 text-center space-y-1">
                 <MessageSquare className="size-5 text-accent mx-auto" />

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
 import { createBet, listContacts, type Contact } from "@/lib/api";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -42,9 +43,11 @@ const STEPS = [
 ] as const;
 
 export default function Bet() {
+  const { user, refresh } = useAuth();
   const [step, setStep] = useState(0);
   const [terms, setTerms] = useState("");
   const [amount, setAmount] = useState("");
+  const [beerWager, setBeerWager] = useState("");
   const [counterparty, setCounterparty] = useState("");
   const [counterpartyMode, setCounterpartyMode] =
     useState<CounterpartyMode>("phone");
@@ -61,7 +64,11 @@ export default function Bet() {
   }, []);
 
   const canAdvance = () => {
-    if (step === 0) return terms.trim().length > 0;
+    if (step === 0) {
+      if (!terms.trim()) return false;
+      if (beerWager && Number(beerWager) > (user?.beer_balance ?? 0)) return false;
+      return true;
+    }
     if (step === 1) return counterparty.trim().length > 0;
     return true;
   };
@@ -112,13 +119,16 @@ export default function Bet() {
 
     setLoading(true);
     try {
+      const parsedWager = beerWager ? Number(beerWager) : undefined;
       const res = await createBet({
         bet_terms: terms,
         counterparty_identifier: cleaned,
         counterparty_identifier_type: counterpartyMode,
         visibility,
         amount: amount.trim() || undefined,
+        beer_wager: parsedWager && parsedWager > 0 ? parsedWager : undefined,
       });
+      refresh();
       setResult(res);
     } catch (err) {
       setError((err as Error).message);
@@ -131,6 +141,7 @@ export default function Bet() {
     setStep(0);
     setTerms("");
     setAmount("");
+    setBeerWager("");
     setCounterparty("");
     setSelectedContact(null);
     setVisibility("visible");
@@ -279,6 +290,27 @@ export default function Bet() {
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="e.g. $20, dinner, bragging rights"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      Beer Wager{" "}
+                      <span className="text-ink-muted font-normal">
+                        (optional &middot; you have {user?.beer_balance ?? 0})
+                      </span>
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={user?.beer_balance ?? 0}
+                      value={beerWager}
+                      onChange={(e) => setBeerWager(e.target.value)}
+                      placeholder="0"
+                    />
+                    {beerWager && Number(beerWager) > (user?.beer_balance ?? 0) && (
+                      <p className="text-[11px] text-lose">
+                        Not enough beers!
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -457,6 +489,14 @@ export default function Bet() {
                           &middot;{" "}
                           <span className="text-accent font-medium">
                             {amount.trim()}
+                          </span>{" "}
+                        </>
+                      )}
+                      {beerWager && Number(beerWager) > 0 && (
+                        <>
+                          &middot;{" "}
+                          <span className="text-amber-400 font-medium">
+                            {beerWager} {Number(beerWager) === 1 ? "beer" : "beers"}
                           </span>{" "}
                         </>
                       )}

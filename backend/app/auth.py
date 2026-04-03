@@ -130,6 +130,7 @@ def get_me(current_user: User = Depends(get_current_user)):
         identifier=current_user.identifier,
         identifier_type=current_user.identifier_type,
         nickname=current_user.nickname,
+        beer_balance=current_user.beer_balance,
     )
 
 

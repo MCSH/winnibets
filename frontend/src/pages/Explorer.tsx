@@ -102,6 +102,7 @@ function friendlyDataLabel(key: string): string {
     terms_hash: "Terms proof",
     bet_terms: "Terms",
     amount: "Amount",
+    beer_wager: "Beer Wager",
     visibility: "Visibility",
   };
   return labels[key] ?? key.replace(/_/g, " ");
@@ -313,6 +314,7 @@ export default function Explorer() {
                             const strVal = String(value);
                             const isHash = /^[a-f0-9]{64}$/.test(strVal);
                             const nick = isHash ? nicknames[strVal] : undefined;
+                            const isIdentityHash = key.endsWith("identity_hash");
                             if (isHash) {
                               return (
                                 <div key={key} className="space-y-0.5">
@@ -327,6 +329,7 @@ export default function Explorer() {
                                   <HashDisplay
                                     label=""
                                     hash={strVal}
+                                    linkTo={isIdentityHash ? `/user/${strVal}` : undefined}
                                   />
                                 </div>
                               );
@@ -460,12 +463,14 @@ export default function Explorer() {
                   {Object.entries(block.data).map(([key, value]) => {
                     const strVal = String(value);
                     const isHash = /^[a-f0-9]{64}$/.test(strVal);
+                    const isIdentity = key.endsWith("identity_hash");
                     if (isHash) {
                       return (
                         <HashDisplay
                           key={key}
                           label={friendlyDataLabel(key)}
                           hash={strVal}
+                          linkTo={isIdentity ? `/user/${strVal}` : undefined}
                         />
                       );
                     }

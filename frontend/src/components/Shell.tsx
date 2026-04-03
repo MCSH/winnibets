@@ -104,9 +104,10 @@ export default function Shell() {
               <>
                 <Link
                   to="/profile"
-                  className="text-xs font-mono text-ink-muted hidden sm:block hover:text-accent transition-colors no-underline"
+                  className="text-xs font-mono text-ink-muted hidden sm:flex items-center gap-2 hover:text-accent transition-colors no-underline"
                 >
-                  {user.nickname ?? user.identifier}
+                  <span>{user.nickname ?? user.identifier}</span>
+                  <span className="text-amber-400">{user.beer_balance}</span>
                 </Link>
                 <Button
                   variant="ghost"

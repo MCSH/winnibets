@@ -28,6 +28,7 @@ class User(Base):
     identifier = Column(String(255), unique=True, nullable=False)
     identifier_type = Column(String(10), nullable=False)  # "email" or "phone"
     nickname = Column(String(255), nullable=True)
+    beer_balance = Column(Integer, nullable=False, default=10)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -77,6 +78,7 @@ class PendingBet(Base):
     # the block is committed).
     bet_terms = Column(Text, nullable=False)
     amount = Column(String(100), nullable=True)  # optional wager amount (free-text)
+    beer_wager = Column(Integer, nullable=True)  # optional beer wager
     visibility = Column(String(10), nullable=False)  # "visible" or "hidden"
     status = Column(
         String(20), default="pending", nullable=False

@@ -50,7 +50,7 @@ export function verifyToken(token: string) {
 }
 
 export function getMe() {
-  return request<{ identifier: string; identifier_type: string; nickname?: string }>("/auth/me");
+  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number }>("/auth/me");
 }
 
 // --- Messages ---
@@ -91,6 +91,7 @@ export function createBet(params: {
   counterparty_identifier_type: "phone" | "email";
   visibility: "visible" | "hidden";
   amount?: string;
+  beer_wager?: number;
 }) {
   return request<{ bet_id: number; message: string }>("/bets", {
     method: "POST",
@@ -179,6 +180,7 @@ export interface ActivityBet {
   bet_id: number;
   bet_terms: string;
   amount?: string;
+  beer_wager?: number;
   visibility: string;
   status: string;
   role: string;
@@ -321,6 +323,25 @@ export function verifyID(
 
 export function getVerificationStatus() {
   return request<VerificationStatus>("/verification/status");
+}
+
+// --- Public Profiles ---
+
+export interface PublicProfile {
+  identity_hash: string;
+  nickname?: string;
+  beer_balance: number;
+  verified: boolean;
+  stats: {
+    bets: number;
+    wins: number;
+    losses: number;
+    on_chain: number;
+  };
+}
+
+export function getPublicProfile(identityHash: string) {
+  return request<PublicProfile>(`/profiles/${identityHash}`);
 }
 
 // --- Blocks ---

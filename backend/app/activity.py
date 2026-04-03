@@ -135,6 +135,7 @@ def my_activity(
                 bet_id=bet.id,
                 bet_terms=bet.bet_terms,
                 amount=bet.amount,
+                beer_wager=bet.beer_wager,
                 visibility=bet.visibility,
                 status=status,
                 role="initiator" if is_initiator else "counterparty",

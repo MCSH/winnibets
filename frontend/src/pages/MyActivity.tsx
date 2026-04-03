@@ -99,6 +99,7 @@ function friendlyDataLabel(key: string): string {
     bet_terms_hash: "Terms proof",
     bet_terms: "Terms",
     amount: "Amount",
+    beer_wager: "Beer Wager",
     visibility: "Visibility",
     winner_side: "Winner",
     note: "Note",
@@ -492,10 +493,19 @@ export default function MyActivity() {
 
                     <div className="bg-ink rounded-lg px-4 py-3 border border-ink-border/40">
                       <p className="text-sm text-chalk">{bet.bet_terms}</p>
-                      {bet.amount && (
-                        <p className="text-xs text-accent font-medium mt-1">
-                          {bet.amount}
-                        </p>
+                      {(bet.amount || bet.beer_wager) && (
+                        <div className="flex items-center gap-3 mt-1">
+                          {bet.amount && (
+                            <span className="text-xs text-accent font-medium">
+                              {bet.amount}
+                            </span>
+                          )}
+                          {bet.beer_wager && (
+                            <span className="text-xs text-amber-400 font-medium">
+                              {bet.beer_wager} {bet.beer_wager === 1 ? "beer" : "beers"}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -652,12 +662,14 @@ export default function MyActivity() {
                           {Object.entries(b.data).map(([key, value]) => {
                             const strVal = String(value);
                             const isHash = /^[a-f0-9]{64}$/.test(strVal);
+                            const isIdentity = key.endsWith("identity_hash");
                             if (isHash) {
                               return (
                                 <HashDisplay
                                   key={key}
                                   label={friendlyDataLabel(key)}
                                   hash={strVal}
+                                  linkTo={isIdentity ? `/user/${strVal}` : undefined}
                                 />
                               );
                             }

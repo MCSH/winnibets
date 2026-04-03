@@ -12,6 +12,7 @@ interface User {
   identifier: string;
   identifier_type: string;
   nickname?: string;
+  beer_balance: number;
 }
 
 interface AuthCtx {

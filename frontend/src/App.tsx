@@ -15,6 +15,7 @@ import MyActivity from "@/pages/MyActivity";
 import Contacts from "@/pages/Contacts";
 import Verification from "@/pages/Verification";
 import Profile from "@/pages/Profile";
+import UserProfile from "@/pages/UserProfile";
 import type { ReactNode } from "react";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -56,6 +57,7 @@ function AppRoutes() {
       <Route element={<Shell />}>
         {/* Public */}
         <Route path="/explorer" element={<Explorer />} />
+        <Route path="/user/:hash" element={<UserProfile />} />
 
         {/* Protected */}
         <Route index element={<Home />} />

@@ -89,6 +89,23 @@ def create_bet(
     # consume rate limit slots.
     check_rate_limit(current_user.id, "bet_invitation")
 
+    # Validate beer wager
+    beer_wager = body.beer_wager
+    if beer_wager is not None:
+        if beer_wager < 1:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "INVALID_WAGER", "message": "Beer wager must be at least 1"},
+            )
+        if beer_wager > current_user.beer_balance:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "INSUFFICIENT_BEERS",
+                    "message": f"You only have {current_user.beer_balance} beers",
+                },
+            )
+
     # Fixed 72-hour expiry
     expires_at = datetime.now(timezone.utc) + timedelta(hours=72)
 
@@ -98,9 +115,14 @@ def create_bet(
         counterparty_user_id=cp_user.id,
         bet_terms=body.bet_terms,
         amount=body.amount.strip() if body.amount and body.amount.strip() else None,
+        beer_wager=beer_wager,
         visibility=body.visibility.value,
         expires_at=expires_at,
     )
+
+    # Escrow: deduct beers from initiator
+    if beer_wager:
+        current_user.beer_balance -= beer_wager
     db.add(pending_bet)
     db.commit()
     db.refresh(pending_bet)
@@ -162,6 +184,7 @@ def list_pending_bets(
                 bet_id=bet.id,
                 bet_terms=bet.bet_terms,
                 amount=bet.amount,
+                beer_wager=bet.beer_wager,
                 visibility=bet.visibility,
                 initiator_identifier=initiator.identifier if initiator else "unknown",
                 initiator_identifier_type=initiator.identifier_type
@@ -212,6 +235,11 @@ def respond_to_bet(
     # Check expiry
     if pending_bet.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         pending_bet.status = "expired"
+        # Refund initiator's escrowed beers
+        if pending_bet.beer_wager:
+            initiator_for_refund = db.query(User).filter(User.id == pending_bet.initiator_id).first()
+            if initiator_for_refund:
+                initiator_for_refund.beer_balance += pending_bet.beer_wager
         # FR12: Scrub hidden bet plaintext on inline expiry detection
         _scrub_hidden_bet_terms(pending_bet)
         db.commit()
@@ -223,6 +251,18 @@ def respond_to_bet(
     initiator = db.query(User).filter(User.id == pending_bet.initiator_id).first()
 
     if body.accept:
+        # Escrow: deduct beers from counterparty
+        if pending_bet.beer_wager:
+            if pending_bet.beer_wager > current_user.beer_balance:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "INSUFFICIENT_BEERS",
+                        "message": f"You only have {current_user.beer_balance} beers",
+                    },
+                )
+            current_user.beer_balance -= pending_bet.beer_wager
+
         # Accept: commit to chain (FR6)
         pending_bet.status = "accepted"
 
@@ -245,6 +285,10 @@ def respond_to_bet(
             timestamp=block.timestamp,
         )
     else:
+        # Refund initiator's escrowed beers
+        if pending_bet.beer_wager:
+            initiator.beer_balance += pending_bet.beer_wager
+
         # FR5: Decline -> notify initiator, then delete the pending bet row.
         send_notification(
             identifier=initiator.identifier,
@@ -294,6 +338,8 @@ def _build_bet_block_data(
 
     if pending_bet.amount:
         data["amount"] = pending_bet.amount
+    if pending_bet.beer_wager:
+        data["beer_wager"] = pending_bet.beer_wager
 
     return data
 
@@ -373,6 +419,9 @@ def expire_pending_bets(
         bet.status = "expired"
         initiator = db.query(User).filter(User.id == bet.initiator_id).first()
         if initiator:
+            # Refund initiator's escrowed beers
+            if bet.beer_wager:
+                initiator.beer_balance += bet.beer_wager
             send_notification(
                 identifier=initiator.identifier,
                 identifier_type=initiator.identifier_type,
@@ -561,6 +610,11 @@ def respond_to_resolution(
     if body.accept:
         resolution.status = "accepted"
         resolution.resolved_at = datetime.now(timezone.utc)
+
+        # Transfer escrowed beers to winner
+        if bet.beer_wager:
+            winner_user = db.query(User).filter(User.id == resolution.winner_id).first()
+            winner_user.beer_balance += bet.beer_wager * 2
 
         # Determine winner identity hash
         winner = db.query(User).filter(User.id == resolution.winner_id).first()

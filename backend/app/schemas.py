@@ -44,6 +44,7 @@ class UserResponse(BaseModel):
     identifier: str
     identifier_type: str
     nickname: Optional[str] = None
+    beer_balance: int = 10
 
 
 # --- Hidden message schemas ---
@@ -76,6 +77,7 @@ class BetCreateRequest(BaseModel):
     counterparty_identifier_type: IdentifierType
     visibility: Visibility
     amount: Optional[str] = None
+    beer_wager: Optional[int] = None
 
     @field_validator("bet_terms")
     @classmethod
@@ -112,6 +114,7 @@ class PendingBetSummary(BaseModel):
     bet_id: int
     bet_terms: str
     amount: Optional[str] = None
+    beer_wager: Optional[int] = None
     visibility: str
     initiator_identifier: str
     initiator_identifier_type: str
@@ -205,6 +208,7 @@ class ActivityBet(BaseModel):
     bet_id: int
     bet_terms: str
     amount: Optional[str] = None
+    beer_wager: Optional[int] = None
     visibility: str
     status: str  # "pending", "accepted", "declined", "expired"
     role: str  # "initiator" or "counterparty"
