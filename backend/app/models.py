@@ -27,6 +27,7 @@ class User(Base):
     # Normalized identifier: lowercased email or E.164 phone number.
     identifier = Column(String(255), unique=True, nullable=False)
     identifier_type = Column(String(10), nullable=False)  # "email" or "phone"
+    nickname = Column(String(255), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

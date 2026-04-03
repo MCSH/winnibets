@@ -12,7 +12,7 @@ from app.config import settings
 async def extract_text_from_image(
     image_bytes: bytes, document_type: str
 ) -> str:
-    """Send base64-encoded image to Ollama vision model and return extracted text."""
+    """Send base64-encoded image to OpenAI vision model and return extracted text."""
     b64 = base64.b64encode(image_bytes).decode("ascii")
 
     if document_type == "passport":
@@ -30,16 +30,27 @@ async def extract_text_from_image(
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {settings.openai_api_key}"},
             json={
-                "model": settings.ollama_model,
-                "prompt": prompt,
-                "images": [b64],
-                "stream": False,
+                "model": settings.openai_model,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                            },
+                        ],
+                    }
+                ],
+                "max_tokens": 1000,
             },
         )
         resp.raise_for_status()
-        return resp.json()["response"]
+        return resp.json()["choices"][0]["message"]["content"]
 
 
 # ---------------------------------------------------------------------------

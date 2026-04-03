@@ -43,6 +43,7 @@ class VerifyResponse(BaseModel):
 class UserResponse(BaseModel):
     identifier: str
     identifier_type: str
+    nickname: Optional[str] = None
 
 
 # --- Hidden message schemas ---

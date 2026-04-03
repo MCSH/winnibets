@@ -112,6 +112,10 @@ async def verify_id(
         failure_reason=failure_reason,
     )
     db.add(record)
+
+    if status == "verified" and extracted_name:
+        user.nickname = extracted_name
+
     db.commit()
     db.refresh(record)
 

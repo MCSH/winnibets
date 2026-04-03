@@ -129,6 +129,7 @@ def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse(
         identifier=current_user.identifier,
         identifier_type=current_user.identifier_type,
+        nickname=current_user.nickname,
     )
 
 
