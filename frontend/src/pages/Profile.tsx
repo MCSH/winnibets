@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import {
-  User as UserIcon,
   ShieldCheck,
   ShieldX,
   ShieldQuestion,
@@ -22,6 +21,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import GlyphPet from "@/components/GlyphPet";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -95,20 +95,8 @@ export default function Profile() {
           <CardContent className="space-y-5">
             <div className="flex items-start gap-4">
               {/* Avatar */}
-              <div
-                className={`size-16 rounded-2xl flex items-center justify-center shrink-0 ${
-                  isVerified
-                    ? "bg-win/15 text-win"
-                    : "bg-accent/15 text-accent"
-                }`}
-              >
-                {user.nickname ? (
-                  <span className="text-2xl font-display">
-                    {user.nickname.charAt(0).toUpperCase()}
-                  </span>
-                ) : (
-                  <UserIcon className="size-7" />
-                )}
+              <div className="shrink-0">
+                <GlyphPet hash={user.identity_hash} size={64} />
               </div>
 
               <div className="flex-1 min-w-0 space-y-1">

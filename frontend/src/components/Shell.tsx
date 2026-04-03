@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X, MessageSquarePlus, Swords, Download, Sun, Monitor, Moon } from "lucide-react";
+import GlyphPet from "@/components/GlyphPet";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInstallPrompt } from "@/lib/pwa";
@@ -110,6 +111,7 @@ export default function Shell() {
                   to="/profile"
                   className="text-xs font-mono text-ink-muted hidden sm:flex items-center gap-2 hover:text-accent transition-colors no-underline"
                 >
+                  <GlyphPet hash={user.identity_hash} size={28} />
                   <span>{user.nickname ?? user.identifier}</span>
                   <span className="text-amber-400">{user.beer_balance}</span>
                 </Link>

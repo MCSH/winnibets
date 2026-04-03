@@ -9,8 +9,8 @@ import {
   ShieldCheck,
   ChevronUp,
   ChevronDown,
-  User as UserIcon,
 } from "lucide-react";
+import GlyphPet from "@/components/GlyphPet";
 
 type SortKey = "beers" | "wins" | "losses" | "bets";
 
@@ -162,20 +162,8 @@ export default function Leaderboard() {
 
                   {/* Avatar + name */}
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <div
-                      className={`size-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        entry.verified
-                          ? "bg-win/15 text-win"
-                          : "bg-accent/15 text-accent"
-                      }`}
-                    >
-                      {entry.nickname ? (
-                        <span className="text-sm font-display font-semibold">
-                          {entry.nickname.charAt(0).toUpperCase()}
-                        </span>
-                      ) : (
-                        <UserIcon className="size-4" />
-                      )}
+                    <div className="shrink-0">
+                      <GlyphPet hash={entry.identity_hash} size={36} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">

@@ -25,6 +25,7 @@ import {
   EyeOff,
   Fingerprint,
 } from "lucide-react";
+import GlyphPet from "@/components/GlyphPet";
 
 interface BlockData {
   block_index: number;
@@ -244,20 +245,26 @@ export default function Explorer() {
                     }
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-ink-light hover:bg-ink-lighter border border-ink-border/50 hover:border-accent/30 transition-all duration-200 cursor-pointer text-left group"
                   >
-                    {/* Icon */}
-                    <span
-                      className={`shrink-0 size-9 rounded-lg flex items-center justify-center ${
-                        b.record_type === "bet"
-                          ? "bg-lose/10 text-lose"
-                          : b.record_type === "hidden_message"
-                            ? "bg-amber-500/10 text-amber-400"
-                            : b.record_type === "open_message"
-                              ? "bg-win/10 text-win"
-                              : "bg-ink text-ink-muted"
-                      }`}
-                    >
-                      {cfg.icon}
-                    </span>
+                    {/* Icon / GlyphPet */}
+                    {primaryHash ? (
+                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <GlyphPet hash={primaryHash} size={36} />
+                      </div>
+                    ) : (
+                      <span
+                        className={`shrink-0 size-9 rounded-lg flex items-center justify-center ${
+                          b.record_type === "bet"
+                            ? "bg-lose/10 text-lose"
+                            : b.record_type === "hidden_message"
+                              ? "bg-amber-500/10 text-amber-400"
+                              : b.record_type === "open_message"
+                                ? "bg-win/10 text-win"
+                                : "bg-ink text-ink-muted"
+                        }`}
+                      >
+                        {cfg.icon}
+                      </span>
+                    )}
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">

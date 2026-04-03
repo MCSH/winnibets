@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
-from app.hashing import normalize_identifier
+from app.hashing import hash_identity, normalize_identifier
 from app.models import MagicLink, SessionToken, User
 from app.notifications import send_notification
 from app.schemas import (
@@ -131,6 +131,7 @@ def get_me(current_user: User = Depends(get_current_user)):
         identifier_type=current_user.identifier_type,
         nickname=current_user.nickname,
         beer_balance=current_user.beer_balance,
+        identity_hash=hash_identity(current_user.identifier),
     )
 
 

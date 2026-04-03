@@ -45,6 +45,7 @@ class UserResponse(BaseModel):
     identifier_type: str
     nickname: Optional[str] = None
     beer_balance: int = 10
+    identity_hash: str = ""
 
 
 # --- Hidden message schemas ---

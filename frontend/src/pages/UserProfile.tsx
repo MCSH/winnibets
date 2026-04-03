@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import HashDisplay from "@/components/HashDisplay";
 import { motion } from "motion/react";
 import {
-  User as UserIcon,
   ShieldCheck,
   Swords,
   Trophy,
   Link as LinkIcon,
 } from "lucide-react";
+import GlyphPet from "@/components/GlyphPet";
 
 export default function UserProfile() {
   const { hash } = useParams<{ hash: string }>();
@@ -74,20 +74,8 @@ export default function UserProfile() {
         >
           <CardContent className="space-y-5">
             <div className="flex items-start gap-4">
-              <div
-                className={`size-16 rounded-2xl flex items-center justify-center shrink-0 ${
-                  profile.verified
-                    ? "bg-win/15 text-win"
-                    : "bg-accent/15 text-accent"
-                }`}
-              >
-                {profile.nickname ? (
-                  <span className="text-2xl font-display">
-                    {profile.nickname.charAt(0).toUpperCase()}
-                  </span>
-                ) : (
-                  <UserIcon className="size-7" />
-                )}
+              <div className="shrink-0">
+                <GlyphPet hash={profile.identity_hash} size={64} />
               </div>
 
               <div className="flex-1 min-w-0 space-y-2">

@@ -50,7 +50,7 @@ export function verifyToken(token: string) {
 }
 
 export function getMe() {
-  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number }>("/auth/me");
+  return request<{ identifier: string; identifier_type: string; nickname?: string; beer_balance: number; identity_hash: string }>("/auth/me");
 }
 
 // --- Messages ---

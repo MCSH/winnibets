@@ -13,6 +13,7 @@ interface User {
   identifier_type: string;
   nickname?: string;
   beer_balance: number;
+  identity_hash: string;
 }
 
 interface AuthCtx {
