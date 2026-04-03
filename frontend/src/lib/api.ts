@@ -90,6 +90,7 @@ export function createBet(params: {
   counterparty_identifier: string;
   counterparty_identifier_type: "phone" | "email";
   visibility: "visible" | "hidden";
+  amount?: string;
 }) {
   return request<{ bet_id: number; message: string }>("/bets", {
     method: "POST",
@@ -177,6 +178,7 @@ export interface BetResolution {
 export interface ActivityBet {
   bet_id: number;
   bet_terms: string;
+  amount?: string;
   visibility: string;
   status: string;
   role: string;

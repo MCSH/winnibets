@@ -101,6 +101,7 @@ function friendlyDataLabel(key: string): string {
     counterparty_identity_hash: "Opponent",
     terms_hash: "Terms proof",
     bet_terms: "Terms",
+    amount: "Amount",
     visibility: "Visibility",
   };
   return labels[key] ?? key.replace(/_/g, " ");

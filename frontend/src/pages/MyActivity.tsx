@@ -98,6 +98,7 @@ function friendlyDataLabel(key: string): string {
     winner_identity_hash: "Winner proof",
     bet_terms_hash: "Terms proof",
     bet_terms: "Terms",
+    amount: "Amount",
     visibility: "Visibility",
     winner_side: "Winner",
     note: "Note",
@@ -491,6 +492,11 @@ export default function MyActivity() {
 
                     <div className="bg-ink rounded-lg px-4 py-3 border border-ink-border/40">
                       <p className="text-sm text-chalk">{bet.bet_terms}</p>
+                      {bet.amount && (
+                        <p className="text-xs text-accent font-medium mt-1">
+                          {bet.amount}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-chalk-dim">

@@ -75,6 +75,7 @@ class BetCreateRequest(BaseModel):
     counterparty_identifier: str
     counterparty_identifier_type: IdentifierType
     visibility: Visibility
+    amount: Optional[str] = None
 
     @field_validator("bet_terms")
     @classmethod
@@ -110,6 +111,7 @@ class BetAcceptResponse(BaseModel):
 class PendingBetSummary(BaseModel):
     bet_id: int
     bet_terms: str
+    amount: Optional[str] = None
     visibility: str
     initiator_identifier: str
     initiator_identifier_type: str
@@ -202,6 +204,7 @@ class BetResolutionSummary(BaseModel):
 class ActivityBet(BaseModel):
     bet_id: int
     bet_terms: str
+    amount: Optional[str] = None
     visibility: str
     status: str  # "pending", "accepted", "declined", "expired"
     role: str  # "initiator" or "counterparty"

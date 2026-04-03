@@ -76,6 +76,7 @@ class PendingBet(Base):
     # the SHA-256 hash to satisfy FR12 (no persisting hidden bet terms after
     # the block is committed).
     bet_terms = Column(Text, nullable=False)
+    amount = Column(String(100), nullable=True)  # optional wager amount (free-text)
     visibility = Column(String(10), nullable=False)  # "visible" or "hidden"
     status = Column(
         String(20), default="pending", nullable=False

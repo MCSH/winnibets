@@ -44,6 +44,7 @@ const STEPS = [
 export default function Bet() {
   const [step, setStep] = useState(0);
   const [terms, setTerms] = useState("");
+  const [amount, setAmount] = useState("");
   const [counterparty, setCounterparty] = useState("");
   const [counterpartyMode, setCounterpartyMode] =
     useState<CounterpartyMode>("phone");
@@ -116,6 +117,7 @@ export default function Bet() {
         counterparty_identifier: cleaned,
         counterparty_identifier_type: counterpartyMode,
         visibility,
+        amount: amount.trim() || undefined,
       });
       setResult(res);
     } catch (err) {
@@ -128,6 +130,7 @@ export default function Bet() {
   const resetForm = () => {
     setStep(0);
     setTerms("");
+    setAmount("");
     setCounterparty("");
     setSelectedContact(null);
     setVisibility("visible");
@@ -250,18 +253,33 @@ export default function Bet() {
             <CardContent className="space-y-5">
               {/* Step 0: Terms */}
               {step === 0 && (
-                <div className="space-y-2">
-                  <Label>Bet Terms</Label>
-                  <Textarea
-                    value={terms}
-                    onChange={(e) => setTerms(e.target.value)}
-                    rows={4}
-                    placeholder="I bet that..."
-                    autoFocus
-                  />
-                  <p className="text-[11px] text-ink-muted">
-                    Be specific — this goes on the blockchain.
-                  </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Bet Terms</Label>
+                    <Textarea
+                      value={terms}
+                      onChange={(e) => setTerms(e.target.value)}
+                      rows={4}
+                      placeholder="I bet that..."
+                      autoFocus
+                    />
+                    <p className="text-[11px] text-ink-muted">
+                      Be specific — this goes on the blockchain.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      Amount{" "}
+                      <span className="text-ink-muted font-normal">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Input
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="e.g. $20, dinner, bragging rights"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -434,6 +452,14 @@ export default function Bet() {
                           ? `${selectedContact.name} (${selectedContact.identifier})`
                           : counterparty}
                       </span>{" "}
+                      {amount.trim() && (
+                        <>
+                          &middot;{" "}
+                          <span className="text-accent font-medium">
+                            {amount.trim()}
+                          </span>{" "}
+                        </>
+                      )}
                       &middot; {visibility} terms · expires in 72h
                     </p>
                   </div>

@@ -97,6 +97,7 @@ def create_bet(
         initiator_id=current_user.id,
         counterparty_user_id=cp_user.id,
         bet_terms=body.bet_terms,
+        amount=body.amount.strip() if body.amount and body.amount.strip() else None,
         visibility=body.visibility.value,
         expires_at=expires_at,
     )
@@ -119,13 +120,14 @@ def create_bet(
     # Use identity hash prefix instead of raw identifier for privacy.
     initiator_label = f"user {hash_identity(current_user.identifier)[:8]}"
     link_url = f"{settings.magic_link_base_url}/auth/verify?token={token}"
+    amount_text = f"\nAmount: {pending_bet.amount}" if pending_bet.amount else ""
     send_notification(
         identifier=cp_normalized,
         identifier_type=body.counterparty_identifier_type.value,
         subject="You have been invited to a bet!",
         body=(
             f"You have been invited to a bet by {initiator_label}.\n\n"
-            f"Terms: {body.bet_terms}\n\n"
+            f"Terms: {body.bet_terms}{amount_text}\n\n"
             f"Click here to review and respond: {link_url}"
         ),
     )
@@ -159,6 +161,7 @@ def list_pending_bets(
             PendingBetSummary(
                 bet_id=bet.id,
                 bet_terms=bet.bet_terms,
+                amount=bet.amount,
                 visibility=bet.visibility,
                 initiator_identifier=initiator.identifier if initiator else "unknown",
                 initiator_identifier_type=initiator.identifier_type
@@ -288,6 +291,9 @@ def _build_bet_block_data(
     else:
         # Hidden bet: store hash only, discard plaintext (FR6, FR12)
         data["bet_terms_hash"] = hash_content(pending_bet.bet_terms)
+
+    if pending_bet.amount:
+        data["amount"] = pending_bet.amount
 
     return data
 
