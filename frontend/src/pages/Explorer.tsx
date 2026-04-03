@@ -247,8 +247,8 @@ export default function Explorer() {
                   >
                     {/* Icon / GlyphPet */}
                     {primaryHash ? (
-                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <GlyphPet hash={primaryHash} size={36} />
+                      <div className="shrink-0">
+                        <GlyphPet hash={primaryHash} size={32} />
                       </div>
                     ) : (
                       <span
