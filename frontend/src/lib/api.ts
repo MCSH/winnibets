@@ -50,7 +50,7 @@ export function verifyToken(token: string) {
 }
 
 export function getMe() {
-  return request<{ identifier: string; identifier_type: string }>("/auth/me");
+  return request<{ identifier: string; identifier_type: string; nickname?: string }>("/auth/me");
 }
 
 // --- Messages ---
@@ -182,8 +182,10 @@ export interface ActivityBet {
   role: string;
   counterparty_identifier?: string;
   counterparty_identifier_type?: string;
+  counterparty_nickname?: string;
   initiator_identifier?: string;
   initiator_identifier_type?: string;
+  initiator_nickname?: string;
   expires_at: string;
   created_at: string;
   resolution?: BetResolution;
@@ -352,5 +354,6 @@ export function listBlocks(offset = 0, limit = 20) {
     total: number;
     offset: number;
     limit: number;
+    nicknames: Record<string, string>;
   }>(`/blocks/list?offset=${offset}&limit=${limit}`);
 }

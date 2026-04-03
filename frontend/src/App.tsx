@@ -14,6 +14,7 @@ import Explorer from "@/pages/Explorer";
 import MyActivity from "@/pages/MyActivity";
 import Contacts from "@/pages/Contacts";
 import Verification from "@/pages/Verification";
+import Profile from "@/pages/Profile";
 import type { ReactNode } from "react";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -87,6 +88,14 @@ function AppRoutes() {
           element={
             <RequireAuth>
               <Contacts />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
             </RequireAuth>
           }
         />

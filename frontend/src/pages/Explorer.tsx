@@ -120,6 +120,7 @@ export default function Explorer() {
   const [offset, setOffset] = useState(0);
   const [listLoading, setListLoading] = useState(true);
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
+  const [nicknames, setNicknames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadBlocks(0);
@@ -132,6 +133,7 @@ export default function Explorer() {
       setBlocks(res.blocks);
       setTotal(res.total);
       setOffset(newOffset);
+      setNicknames(res.nicknames ?? {});
     } catch {
       // silently fail
     } finally {
@@ -220,6 +222,11 @@ export default function Explorer() {
             {displayBlocks.map((b, i) => {
               const cfg = typeConfig[b.record_type] ?? fallbackConfig;
               const isExpanded = expandedBlock === b.block_index;
+              // Resolve nickname for the primary actor on this block
+              const primaryHash =
+                (b.data.identity_hash as string) ??
+                (b.data.initiator_identity_hash as string);
+              const blockNick = primaryHash ? nicknames[primaryHash] : undefined;
 
               return (
                 <motion.div
@@ -254,9 +261,15 @@ export default function Explorer() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <Badge variant={cfg.variant}>{cfg.label}</Badge>
-                        <span className="text-xs text-chalk-dim">
-                          {cfg.description}
-                        </span>
+                        {blockNick ? (
+                          <span className="text-xs text-accent font-medium">
+                            {blockNick}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-chalk-dim">
+                            {cfg.description}
+                          </span>
+                        )}
                       </div>
                       <span className="block font-mono text-[11px] text-ink-muted truncate mt-0.5">
                         {b.block_hash}
@@ -298,13 +311,23 @@ export default function Explorer() {
                           {Object.entries(b.data).map(([key, value]) => {
                             const strVal = String(value);
                             const isHash = /^[a-f0-9]{64}$/.test(strVal);
+                            const nick = isHash ? nicknames[strVal] : undefined;
                             if (isHash) {
                               return (
-                                <HashDisplay
-                                  key={key}
-                                  label={friendlyDataLabel(key)}
-                                  hash={strVal}
-                                />
+                                <div key={key} className="space-y-0.5">
+                                  <span className="text-[10px] font-medium text-ink-muted uppercase tracking-wider">
+                                    {friendlyDataLabel(key)}
+                                  </span>
+                                  {nick && (
+                                    <p className="text-sm text-accent font-medium">
+                                      {nick}
+                                    </p>
+                                  )}
+                                  <HashDisplay
+                                    label=""
+                                    hash={strVal}
+                                  />
+                                </div>
                               );
                             }
                             return (

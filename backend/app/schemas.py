@@ -163,6 +163,7 @@ class BlockListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+    nicknames: dict[str, str] = {}  # identity_hash → nickname
 
 
 # --- Integrity check schemas ---
@@ -206,8 +207,10 @@ class ActivityBet(BaseModel):
     role: str  # "initiator" or "counterparty"
     counterparty_identifier: Optional[str] = None
     counterparty_identifier_type: Optional[str] = None
+    counterparty_nickname: Optional[str] = None
     initiator_identifier: Optional[str] = None
     initiator_identifier_type: Optional[str] = None
+    initiator_nickname: Optional[str] = None
     expires_at: str
     created_at: str
     resolution: Optional[BetResolutionSummary] = None

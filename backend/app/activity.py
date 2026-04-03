@@ -143,10 +143,16 @@ def my_activity(
                 counterparty_identifier_type=counterparty.identifier_type
                 if counterparty and is_initiator
                 else None,
+                counterparty_nickname=counterparty.nickname
+                if counterparty and is_initiator
+                else None,
                 initiator_identifier=initiator.identifier
                 if initiator and not is_initiator
                 else None,
                 initiator_identifier_type=initiator.identifier_type
+                if initiator and not is_initiator
+                else None,
+                initiator_nickname=initiator.nickname
                 if initiator and not is_initiator
                 else None,
                 expires_at=bet.expires_at.isoformat(),

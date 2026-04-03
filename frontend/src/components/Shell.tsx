@@ -16,6 +16,7 @@ const AUTH_NAV = [
   { to: "/contacts", label: "Contacts" },
   { to: "/verification", label: "Verify ID" },
   { to: "/explorer", label: "Ledger" },
+  { to: "/profile", label: "Profile" },
 ] as const;
 
 const PUBLIC_NAV = [{ to: "/explorer", label: "Ledger" }] as const;
@@ -101,9 +102,12 @@ export default function Shell() {
 
             {user ? (
               <>
-                <span className="text-xs font-mono text-ink-muted hidden sm:block">
-                  {user.identifier}
-                </span>
+                <Link
+                  to="/profile"
+                  className="text-xs font-mono text-ink-muted hidden sm:block hover:text-accent transition-colors no-underline"
+                >
+                  {user.nickname ?? user.identifier}
+                </Link>
                 <Button
                   variant="ghost"
                   size="sm"

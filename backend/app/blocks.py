@@ -1,14 +1,48 @@
 """Block lookup and chain integrity endpoints (FR9, FR10)."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.database import get_db
+from app.hashing import hash_identity
+from app.models import User
 from app.schemas import BlockListResponse, BlockLookupResponse, BlockSummary, IntegrityResponse
 
 router = APIRouter(prefix="/blocks", tags=["blocks"])
 
+_IDENTITY_HASH_KEYS = {
+    "identity_hash",
+    "initiator_identity_hash",
+    "counterparty_identity_hash",
+}
+
+
+def _collect_identity_hashes(blocks_data: list[dict]) -> set[str]:
+    """Extract all identity hashes from a list of block data dicts."""
+    hashes: set[str] = set()
+    for data in blocks_data:
+        for key in _IDENTITY_HASH_KEYS:
+            val = data.get(key)
+            if val and isinstance(val, str):
+                hashes.add(val)
+    return hashes
+
+
+def _resolve_nicknames(identity_hashes: set[str], db: Session) -> dict[str, str]:
+    """Map identity hashes to nicknames for users that have one."""
+    if not identity_hashes:
+        return {}
+    users = db.query(User).filter(User.nickname.isnot(None)).all()
+    hash_to_nick: dict[str, str] = {}
+    for user in users:
+        h = hash_identity(user.identifier)
+        if h in identity_hashes:
+            hash_to_nick[h] = user.nickname
+    return hash_to_nick
+
 
 @router.get("/list", response_model=BlockListResponse)
-def list_blocks(offset: int = 0, limit: int = 20):
+def list_blocks(offset: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     """Browse the blockchain. Public endpoint (no auth required).
 
     Returns paginated blocks with offset/limit. Default page size is 20, max 100.
@@ -24,6 +58,10 @@ def list_blocks(offset: int = 0, limit: int = 20):
 
     blocks, total = blockchain.get_blocks(offset, limit)
 
+    blocks_data = [b.data for b in blocks]
+    identity_hashes = _collect_identity_hashes(blocks_data)
+    nicknames = _resolve_nicknames(identity_hashes, db)
+
     return BlockListResponse(
         blocks=[
             BlockSummary(
@@ -38,6 +76,7 @@ def list_blocks(offset: int = 0, limit: int = 20):
         total=total,
         offset=offset,
         limit=limit,
+        nicknames=nicknames,
     )
 
 

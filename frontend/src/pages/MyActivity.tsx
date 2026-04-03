@@ -499,7 +499,7 @@ export default function MyActivity() {
                           <span>
                             vs{" "}
                             <span className="font-mono text-chalk">
-                              {displayName(bet.counterparty_identifier)}
+                              {bet.counterparty_nickname ?? displayName(bet.counterparty_identifier)}
                             </span>
                           </span>
                         )}
@@ -508,7 +508,7 @@ export default function MyActivity() {
                           <span>
                             From{" "}
                             <span className="font-mono text-chalk">
-                              {displayName(bet.initiator_identifier)}
+                              {bet.initiator_nickname ?? displayName(bet.initiator_identifier)}
                             </span>
                           </span>
                         )}

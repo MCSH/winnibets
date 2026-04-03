@@ -11,6 +11,7 @@ import { getMe } from "@/lib/api";
 interface User {
   identifier: string;
   identifier_type: string;
+  nickname?: string;
 }
 
 interface AuthCtx {
