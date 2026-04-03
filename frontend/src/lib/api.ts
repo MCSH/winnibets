@@ -344,6 +344,20 @@ export function getPublicProfile(identityHash: string) {
   return request<PublicProfile>(`/profiles/${identityHash}`);
 }
 
+export interface LeaderboardEntry {
+  identity_hash: string;
+  nickname?: string;
+  beer_balance: number;
+  verified: boolean;
+  bets: number;
+  wins: number;
+  losses: number;
+}
+
+export function getLeaderboard() {
+  return request<LeaderboardEntry[]>("/profiles/leaderboard/list");
+}
+
 // --- Blocks ---
 
 export function lookupBlock(blockHash: string) {

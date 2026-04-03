@@ -16,6 +16,7 @@ const AUTH_NAV = [
   { to: "/contacts", label: "Contacts" },
   { to: "/verification", label: "Verify ID" },
   { to: "/explorer", label: "Ledger" },
+  { to: "/leaderboard", label: "Leaderboard" },
   { to: "/profile", label: "Profile" },
 ] as const;
 

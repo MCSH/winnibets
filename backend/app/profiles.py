@@ -20,6 +20,71 @@ class PublicProfile(BaseModel):
     stats: dict
 
 
+class LeaderboardEntry(BaseModel):
+    identity_hash: str
+    nickname: Optional[str] = None
+    beer_balance: int = 10
+    verified: bool = False
+    bets: int = 0
+    wins: int = 0
+    losses: int = 0
+
+
+@router.get("/leaderboard/list", response_model=list[LeaderboardEntry])
+def get_leaderboard(db: Session = Depends(get_db)):
+    """Return all users with at least one bet, with stats."""
+    users = db.query(User).all()
+
+    # Preload all resolutions
+    all_resolutions = db.query(BetResolution).filter(BetResolution.status == "accepted").all()
+    resolution_map: dict[int, BetResolution] = {}
+    for r in all_resolutions:
+        resolution_map[r.bet_id] = r
+
+    # Preload verified user IDs
+    verified_ids = {
+        v.user_id
+        for v in db.query(IDVerification).filter(IDVerification.status == "verified").all()
+    }
+
+    entries: list[LeaderboardEntry] = []
+    for user in users:
+        bets = (
+            db.query(PendingBet)
+            .filter(
+                (PendingBet.initiator_id == user.id)
+                | (PendingBet.counterparty_user_id == user.id)
+            )
+            .all()
+        )
+        if not bets:
+            continue
+
+        wins = 0
+        losses = 0
+        for bet in bets:
+            res = resolution_map.get(bet.id)
+            if res:
+                if res.winner_id == user.id:
+                    wins += 1
+                else:
+                    losses += 1
+
+        entries.append(
+            LeaderboardEntry(
+                identity_hash=hash_identity(user.identifier),
+                nickname=user.nickname,
+                beer_balance=user.beer_balance,
+                verified=user.id in verified_ids,
+                bets=len(bets),
+                wins=wins,
+                losses=losses,
+            )
+        )
+
+    return entries
+
+
 @router.get("/{identity_hash}", response_model=PublicProfile)
 def get_public_profile(identity_hash: str, db: Session = Depends(get_db)):
     """Look up a user's public profile by their identity hash."""
